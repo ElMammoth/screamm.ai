@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let injector = ClipboardInjector()
     private let hotkey = HotkeyManager()
 
+    private let overlay = OverlayController()
     private var coordinator: RecordingCoordinator?
     private var menuBar: MenuBarController?
 
@@ -24,14 +25,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.coordinator = coordinator
 
-        coordinator.onStateChange = { [weak menuBar] state in
+        coordinator.onStateChange = { [weak menuBar, overlay] state in
             menuBar?.update(for: state)
+            overlay.update(for: state)
         }
         coordinator.onError = { error in
             NSLog("Screamm error: \(error)")
         }
         injector.onSecureInputBlocked = { [weak menuBar] _ in
             menuBar?.flashSecureInputNotice()
+        }
+
+        // Live audio levels drive the waveform overlay.
+        recorder.onLevel = { [overlay] level in
+            overlay.pushLevel(level)
         }
 
         hotkey.onPress = { [weak coordinator] in coordinator?.handlePress() }

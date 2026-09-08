@@ -23,6 +23,10 @@ public final class AudioRecorder: AudioRecording {
     /// coordinator can choose to abort. Delivered on an arbitrary thread.
     public var onConfigurationChange: (() -> Void)?
 
+    /// Live input level (0...1) for the waveform overlay. Delivered on the MAIN thread,
+    /// roughly per audio buffer while recording.
+    public var onLevel: ((Float) -> Void)?
+
     public init() {
         // 16 kHz mono Float32, non-interleaved — exactly what Whisper wants.
         self.targetFormat = AVAudioFormat(
@@ -97,6 +101,17 @@ public final class AudioRecorder: AudioRecording {
         guard frames > 0 else { return }
         let chunk = Array(UnsafeBufferPointer(start: channel, count: frames))
         lock.lock(); samples.append(contentsOf: chunk); lock.unlock()
+
+        // Live level for the waveform overlay: RMS of this chunk, boosted for speech and
+        // clamped to 0...1. Delivered on the main thread.
+        if let onLevel {
+            var sumSquares: Float = 0
+            for s in chunk { sumSquares += s * s }
+            let rms = sqrt(sumSquares / Float(frames))
+            // Higher sensitivity + perceptual curve so normal speech fills the bars.
+            let level = powf(min(1, rms * 14), 0.6)
+            DispatchQueue.main.async { onLevel(level) }
+        }
     }
 
     @objc private func handleConfigChange() {
