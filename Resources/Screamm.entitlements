@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- v0.1 is intentionally NON-sandboxed: it posts synthetic ⌘V and uses the
+         Accessibility API + a global event monitor, none of which work under the sandbox.
+         (Sandboxing + notarization is a "going public" milestone.) -->
+    <key>com.apple.security.app-sandbox</key>
+    <false/>
+</dict>
+</plist>

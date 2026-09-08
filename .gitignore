@@ -1,0 +1,26 @@
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode (for the app later)
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+
+# WhisperKit model cache / downloaded models
+Models/
+*.mlmodelc
+
+# built app bundle
+Screamm.app/
+
+# spike scratch / voice recordings (never commit audio)
+*.aiff
+*.wav
+*.m4a
+*.caf
+*.mp3
+
+# macOS
+.DS_Store
