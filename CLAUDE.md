@@ -18,8 +18,10 @@ later). Repo: https://github.com/ElMammoth/screamm.ai
 - **Waveform overlay: DONE.** Brand-orange Dynamic-Island pill, bottom-center, live
   waveform, spring pop, deepens while transcribing.
 - **Stable signing cert: DONE.** Permissions now persist across rebuilds.
-- **NEXT (in order):** 1) Duolingo-style onboarding + streak/stats + animations (planning
-  now, see `docs/`), 2) custom dictionary (fixes "Screamm"→"screen").
+- **Onboarding/stats Phase 1: DONE.** `StatsStore` + streak/stats popover + success micro-reward.
+  Plan: `docs/onboarding-stats-plan.md`. Phase 2 (onboarding window) + Phase 3 (celebrations) next.
+- **NEXT (in order):** 1) onboarding/stats Phase 2 (onboarding window) + Phase 3 (milestone
+  celebrations), 2) custom dictionary (fixes "Screamm"→"screen").
 - Deferred items: `TODOS.md`. Roadmap detail: the design doc (see "Where docs live").
 
 ## Repo map

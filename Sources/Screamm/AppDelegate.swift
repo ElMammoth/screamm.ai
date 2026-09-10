@@ -11,17 +11,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hotkey = HotkeyManager()
 
     private let overlay = OverlayController()
+    private let stats = StatsStore()
     private var coordinator: RecordingCoordinator?
     private var menuBar: MenuBarController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let menuBar = MenuBarController()
+        let menuBar = MenuBarController(stats: stats)
         self.menuBar = menuBar
 
         let coordinator = RecordingCoordinator(
             recorder: recorder,
             transcriber: transcriber,
-            injector: injector
+            injector: injector,
+            stats: stats
         )
         self.coordinator = coordinator
 
@@ -41,10 +43,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             overlay.pushLevel(level)
         }
 
+        // Success micro-reward (green ✓ on the pill). Milestones celebrated in a later phase.
+        coordinator.onSuccess = { [overlay] _ in
+            overlay.flashSuccess()
+        }
+        coordinator.onMilestone = { milestone in
+            NSLog("Screamm milestone reached: \(milestone.rawValue)")
+        }
+
         hotkey.onPress = { [weak coordinator] in coordinator?.handlePress() }
         hotkey.onRelease = { [weak coordinator] in coordinator?.handleRelease() }
 
         Task { await bootstrap() }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Flush stats synchronously so a quit mid-write can't lose data.
+        stats.flush()
     }
 
     /// Request permissions, start the hotkey, load + warm the model.

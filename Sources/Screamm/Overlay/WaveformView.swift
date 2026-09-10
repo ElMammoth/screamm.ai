@@ -7,6 +7,8 @@ final class WaveformModel: ObservableObject {
     @Published var isTranscribing: Bool = false
     /// Drives the spring pop-in / pop-out.
     @Published var appear: Bool = false
+    /// Brief green ✓ micro-reward after a successful dictation.
+    @Published var success: Bool = false
     let barCount: Int
 
     init(barCount: Int = 24) {
@@ -25,6 +27,7 @@ final class WaveformModel: ObservableObject {
     func reset() {
         levels = Array(repeating: 0.06, count: barCount)
         isTranscribing = false
+        success = false
     }
 }
 
@@ -37,24 +40,40 @@ struct WaveformView: View {
     private let barSpacing: CGFloat = 2.5
     private let maxBarHeight: CGFloat = 24
     private let capsuleHeight: CGFloat = 40
+    private let successGreen = Color(red: 0.20, green: 0.78, blue: 0.35)
+
+    private var fillColor: Color {
+        if model.success { return successGreen }
+        return model.isTranscribing ? Theme.brandDeep : Theme.brand
+    }
 
     var body: some View {
-        HStack(spacing: barSpacing) {
-            ForEach(Array(model.levels.enumerated()), id: \.offset) { _, level in
-                Capsule()
-                    .fill(Theme.content.opacity(model.isTranscribing ? 0.55 : 0.95))
-                    .frame(width: barWidth, height: 4 + level * maxBarHeight)
+        Group {
+            if model.success {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 20, weight: .heavy))
+                    .foregroundStyle(Theme.content)
+                    .frame(minWidth: 56)
+            } else {
+                HStack(spacing: barSpacing) {
+                    ForEach(Array(model.levels.enumerated()), id: \.offset) { _, level in
+                        Capsule()
+                            .fill(Theme.content.opacity(model.isTranscribing ? 0.55 : 0.95))
+                            .frame(width: barWidth, height: 4 + level * maxBarHeight)
+                    }
+                }
             }
         }
         .frame(height: capsuleHeight)
         .padding(.horizontal, 14)
         .background(
             Capsule(style: .continuous)
-                .fill(model.isTranscribing ? Theme.brandDeep : Theme.brand)
-                .shadow(color: Theme.brand.opacity(0.5), radius: 16, y: 2)
+                .fill(fillColor)
+                .shadow(color: fillColor.opacity(0.5), radius: 16, y: 2)
         )
         .animation(.easeOut(duration: 0.09), value: model.levels)
         .animation(.easeInOut(duration: 0.2), value: model.isTranscribing)
+        .animation(.easeInOut(duration: 0.15), value: model.success)
         // Playful spring pop-in / pop-out.
         .scaleEffect(model.appear ? 1 : 0.8)
         .opacity(model.appear ? 1 : 0)

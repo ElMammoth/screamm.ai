@@ -17,6 +17,11 @@ final class OverlayController {
         model.push(CGFloat(level))
     }
 
+    /// Flash the green ✓ micro-reward (shown briefly before the pill pops out on idle).
+    func flashSuccess() {
+        model.success = true
+    }
+
     /// Show/hide + style the overlay based on the recording state.
     func update(for state: RecordingState) {
         switch state {

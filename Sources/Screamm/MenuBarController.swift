@@ -1,56 +1,112 @@
 import AppKit
+import SwiftUI
 import ScreammKit
 
-/// The menu bar presence. v0.1 UI is just the status icon + a status line; the floating
-/// pill overlay is v0.2.
+/// The menu bar presence. Left-click opens the stats popover; right-click shows a minimal
+/// fallback menu. Status item shows an SF Symbol flame + streak (template image, not emoji,
+/// so it tints correctly and doesn't jitter).
 @MainActor
 final class MenuBarController {
 
     private let statusItem: NSStatusItem
-    private let statusLine: NSMenuItem
+    private let stats: StatsStore
+    private let popover: NSPopover = {
+        let p = NSPopover()
+        p.behavior = .transient
+        return p
+    }()
 
-    init() {
+    init(stats: StatsStore) {
+        self.stats = stats
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.title = Glyph.idle
-
-        let menu = NSMenu()
-        statusLine = NSMenuItem(title: "Starting…", action: nil, keyEquivalent: "")
-        statusLine.isEnabled = false
-        menu.addItem(statusLine)
-        menu.addItem(.separator())
-
-        let quit = NSMenuItem(
-            title: "Quit Screamm",
-            action: #selector(NSApplication.terminate(_:)),
-            keyEquivalent: "q"
-        )
-        quit.target = NSApp
-        menu.addItem(quit)
-
-        statusItem.menu = menu
+        if let button = statusItem.button {
+            button.action = #selector(handleClick)
+            button.target = self
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        }
+        refreshStreak()
     }
 
+    // MARK: Status
+
     func setStatus(_ text: String) {
-        statusLine.title = text
+        statusItem.button?.toolTip = text
+    }
+
+    func flashSecureInputNotice() {
+        statusItem.button?.toolTip = "Secure input active — press ⌘V to paste"
     }
 
     func update(for state: RecordingState) {
         switch state {
-        case .idle:         statusItem.button?.title = Glyph.idle
-        case .recording:    statusItem.button?.title = Glyph.recording
-        case .transcribing: statusItem.button?.title = Glyph.transcribing
-        case .injecting:    statusItem.button?.title = Glyph.injecting
+        case .idle:         refreshStreak()
+        case .recording:    setGlyph("mic.fill")
+        case .transcribing: setGlyph("waveform")
+        case .injecting:    setGlyph("checkmark")
         }
     }
 
-    func flashSecureInputNotice() {
-        setStatus("Secure input active — press ⌘V to paste")
+    /// Reflect the current streak in the menu bar (called on idle + after each dictation).
+    func refreshStreak() {
+        guard let button = statusItem.button else { return }
+        let streak = stats.data.currentStreak
+        if streak > 0 {
+            button.image = Self.symbol("flame.fill")
+            button.imagePosition = .imageLeading
+            button.attributedTitle = NSAttributedString(
+                string: " \(streak)",
+                attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .semibold)])
+        } else {
+            button.image = Self.symbol("mic.fill")
+            button.imagePosition = .imageOnly
+            button.title = ""
+        }
     }
 
-    private enum Glyph {
-        static let idle = "🎙️"
-        static let recording = "🔴"
-        static let transcribing = "✍️"
-        static let injecting = "📋"
+    // MARK: Clicks
+
+    @objc private func handleClick() {
+        if NSApp.currentEvent?.type == .rightMouseUp {
+            showContextMenu()
+        } else {
+            togglePopover()
+        }
+    }
+
+    private func togglePopover() {
+        guard let button = statusItem.button else { return }
+        if popover.isShown {
+            popover.performClose(nil)
+            return
+        }
+        // Accessory apps must activate or the popover's SwiftUI controls get no events.
+        NSApp.activate(ignoringOtherApps: true)
+        popover.contentViewController = NSHostingController(
+            rootView: StatsPanel(data: stats.data, onQuit: { NSApp.terminate(nil) }))
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+    }
+
+    private func showContextMenu() {
+        let menu = NSMenu()
+        let quit = NSMenuItem(
+            title: "Quit Screamm", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        quit.target = NSApp
+        menu.addItem(quit)
+        if let button = statusItem.button {
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
+        }
+    }
+
+    private func setGlyph(_ name: String) {
+        guard let button = statusItem.button else { return }
+        button.image = Self.symbol(name)
+        button.imagePosition = .imageOnly
+        button.title = ""
+    }
+
+    private static func symbol(_ name: String) -> NSImage? {
+        let image = NSImage(systemSymbolName: name, accessibilityDescription: name)
+        image?.isTemplate = true
+        return image
     }
 }

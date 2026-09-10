@@ -3,6 +3,10 @@
 Newest first. One line per meaningful milestone: what, and why it mattered.
 
 ## 2026-09
+- **Onboarding/stats Phase 1** — `StatsStore` (local JSON, Calendar-safe streaks, atomic write,
+  milestones), coordinator `onSuccess`/`onMilestone` hooks, green ✓ micro-reward on the pill,
+  and the stats popover (streak + week row + words/days + time saved) from the menu bar.
+  28/28 tests. Planned via Mobbin + design review (6→9) + eng review + outside voice.
 - **Stable self-signed cert** (`eeb1c5a`) — automated `make-cert.sh`; permissions now persist
   across rebuilds (designated requirement is stable, proven identical across two builds).
 - **Brand-orange waveform overlay** (`8bcd362`) — Dynamic-Island pill, bottom-center, live

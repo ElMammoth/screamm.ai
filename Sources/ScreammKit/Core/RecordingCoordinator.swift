@@ -24,11 +24,16 @@ public final class RecordingCoordinator {
     public var onStateChange: ((RecordingState) -> Void)?
     /// Surfaced to the user (e.g. a notification) when we can't inject or transcribe.
     public var onError: ((Error) -> Void)?
+    /// Fired after a successful dictation with the injected word count (drives the micro-reward).
+    public var onSuccess: ((Int) -> Void)?
+    /// Fired when a dictation crosses a stats milestone (drives celebrations).
+    public var onMilestone: ((Milestone) -> Void)?
 
     private let recorder: AudioRecording
     private let transcriber: Transcribing
     private let injector: TextInjecting
     private let cleanup: CleanupPipeline
+    private let stats: StatsRecording?
     private let minDurationSeconds: Double
 
     public init(
@@ -36,12 +41,14 @@ public final class RecordingCoordinator {
         transcriber: Transcribing,
         injector: TextInjecting,
         cleanup: CleanupPipeline = CleanupPipeline(),
+        stats: StatsRecording? = nil,
         minDurationSeconds: Double = 0.35
     ) {
         self.recorder = recorder
         self.transcriber = transcriber
         self.injector = injector
         self.cleanup = cleanup
+        self.stats = stats
         self.minDurationSeconds = minDurationSeconds
     }
 
@@ -90,6 +97,13 @@ public final class RecordingCoordinator {
 
             state = .injecting
             injector.inject(cleaned)
+
+            let wordCount = cleaned.split(whereSeparator: { $0.isWhitespace }).count
+            onSuccess?(wordCount)
+            if let milestone = stats?.recordDictation(wordCount: wordCount, at: Date()) {
+                onMilestone?(milestone)
+            }
+
             state = .idle
         } catch {
             state = .idle
