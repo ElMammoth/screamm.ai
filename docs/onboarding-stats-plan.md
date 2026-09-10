@@ -83,25 +83,45 @@ Celebrations are **tiered** (design-review decision) — escalating reward witho
 ## Data model (local-only)
 
 `StatsStore` (ScreammKit), persisted to `~/Library/Application Support/Screamm/stats.json` (Codable):
-- `totalWords`, `totalDictations`, `perDay: [YYYY-MM-DD: Int]`, `currentStreak`, `longestStreak`,
-  `lastActiveDay`, `milestonesReached: Set<String>`.
-- `recordDictation(wordCount:, today:)` → updates counts; streak logic: same day = no streak
-  change; `lastActiveDay == yesterday` = streak+1; gap = reset to 1. Returns any newly-reached
-  `Milestone` for celebration. `today` injectable for tests.
+- `schemaVersion` (for future migration), `totalWords`, `totalDictations`,
+  `perDay: [YYYY-MM-DD: Int]`, `currentStreak`, `longestStreak`, `lastActiveDay`,
+  `milestonesReached: Set<String>`.
+- `recordDictation(wordCount:, at:)` → updates counts; streak logic uses `Calendar.current`
+  day comparison: same day = no streak change; last-active == the day before `at` = streak+1;
+  gap = reset to 1. Returns any newly-reached `Milestone`. `at`/calendar injectable for tests.
+- **Corrupt / missing file:** decode failure → back up the bad file (`stats.json.bak`) and start
+  from empty; never crash. Missing file → empty store.
 - **Time saved** (honest estimate, labeled est): `wordsTyped/40wpm − wordsSpoken/150wpm`, i.e.
   ~ `totalWords × (1/40 − 1/150)` minutes. Tune; show as approximate.
 - Privacy: never leaves disk; no network; user can reset stats.
 
-## Architecture (where it slots in)
+## Architecture (where it slots in) — hardened in eng review
 
-- ScreammKit: `StatsStore` + `Milestone` enum (+ time-saved calc). Pure/testable.
-- `RecordingCoordinator`: on successful injection, `stats.recordDictation(wordCount:)`; if it
-  returns a milestone, notify the app to celebrate. (New optional `onMilestone` / `onSuccess` hooks.)
-- Screamm (app): `OnboardingWindowController` + SwiftUI onboarding cards; `StatsPanel` (SwiftUI
-  in an `NSPopover` from the status item); `CelebrationController` (confetti overlay, reuse the
-  OverlayController panel pattern); success bounce added to `WaveformModel`/`OverlayController`.
-- `MenuBarController`: show streak in the status item; add "Stats" + "Settings" items.
-- First-run: `onboardingCompleted` flag in `UserDefaults` (or the stats file).
+- **ScreammKit `StatsRecording` protocol** (new seam, matches `Transcribing`/`TextInjecting`):
+  `recordDictation(wordCount:, at:) -> Milestone?`. `StatsStore` implements it.
+- **`RecordingCoordinator`** takes an injected `StatsRecording?`. On successful injection it
+  calls `stats?.recordDictation(...)`; if a `Milestone` comes back, it emits a new
+  **`onMilestone`** hook (alongside existing `onStateChange`/`onError`). Also a **`onSuccess`**
+  hook for the micro-reward. Keeps record-on-success in one tested place; testable with a fake.
+- **`StatsStore`** (ScreammKit): in-memory model on main; **day math via `Calendar.current`
+  `startOfDay(for:)`** (never string-compare dates — timezone/DST safe); persistence to
+  `~/Library/Application Support/Screamm/stats.json` via **atomic write** (write temp + rename)
+  on a **background queue** so the main thread never blocks on disk. Injectable `now`/`calendar`
+  for tests.
+- **`WhisperKitTranscriber` publishes a `LoadState`** enum `{ idle, downloading(Double),
+  warming, ready, failed(Error) }`, always delivered **on the main thread** (SwiftUI observes
+  it). **Two-step load:** call `WhisperKit.download(...progressCallback:)` first for a REAL
+  percentage, THEN construct the transcriber from the downloaded model (the single-call init
+  gives no progress). `AppDelegate.bootstrap()`, onboarding card 4, and the menu bar observe it.
+  Onboarding kicks the load off on card 1. **Finishing onboarding is never gated on the
+  download** — only the optional "try it" waits for `.ready`; "Start using Screamm" always works.
+- **Screamm (app):** `OnboardingWindowController` + SwiftUI cards; `StatsPanel` (SwiftUI in an
+  `NSPopover` anchored to the status item); `CelebrationController` (reuses the `OverlayController`
+  `NSPanel` pattern, **reduced-motion aware**); success bounce added to `WaveformModel`/`OverlayController`.
+- **`MenuBarController`:** left-click the status item opens the **stats popover** (streak +
+  metrics), with a footer row for **Settings + Quit** inside it; a minimal right-click NSMenu
+  stays as a fallback. Status item shows `🔥 <streak>` when a streak is active.
+- **First-run:** `onboardingCompleted` flag in `UserDefaults`; `AppDelegate` shows onboarding on launch if unset.
 
 ## Animation spec
 
@@ -124,6 +144,34 @@ Celebrations are **tiered** (design-review decision) — escalating reward witho
   gap resets to 1; longest-streak tracking; milestone fires once and only once; word count;
   time-saved calc; persistence round-trip (encode/decode). `today` injected.
 - Onboarding, celebration, popover = manual dogfood (UI).
+
+## Eng-review hardening (macOS footguns — from outside voice)
+
+- **StatsStore persistence:** the persisted model is a **struct**; `StatsStore` snapshots it on
+  main and hands the copy to a **serial background queue** that does `Data.write(.atomic)` (after
+  ensuring `~/Library/Application Support/Screamm/` exists). Flush **synchronously in
+  `applicationWillTerminate`** so a quit-from-popover mid-write can't lose data.
+- **Streak math:** compute "the day before" with `calendar.date(byAdding: .day, value: -1, ...)`
+  + `isDate(inSameDayAs:)` — never 86400s arithmetic (DST). Guard `at < lastActiveDay`
+  (clock set backwards) so the streak can't freeze. `perDay` keys are local days (accepted).
+- **Menu-bar click:** don't set `statusItem.menu`; give the button one action and branch on
+  `NSApp.currentEvent` (left → popover, right → minimal menu). Popover is `.transient`
+  (outside-click dismiss); call `NSApp.activate(ignoringOtherApps: true)` before showing it or
+  its SwiftUI buttons won't receive events (accessory app).
+- **Onboarding window:** flip `NSApp.setActivationPolicy(.regular)` while onboarding is open
+  (so the window can become key + accept Tab/Return/Esc), then back to `.accessory` on finish.
+  `makeKeyAndOrderFront`. (Dock icon appears during onboarding only — acceptable.)
+- **Celebration panel:** a **separate `.nonactivatingPanel`** (NOT the click-through waveform
+  panel) so it never steals focus mid-typing. Milestone celebration is **click-through +
+  auto-dismiss, no button** (dropped the "Nice" CTA — simpler, never blocks typing).
+- **Celebration precedence:** during onboarding, **card 4 owns the celebration**; suppress the
+  first-dictation milestone + micro-reward there so nothing triple-fires. The "first dictation"
+  milestone fires on the first post-onboarding dictation instead.
+- **Onboarding completion:** Esc / "Maybe later" / finishing ALL set `onboardingCompleted`.
+- **Reduced motion:** single source — SwiftUI `@Environment(\.accessibilityReduceMotion)`;
+  observe changes for a live toggle.
+- **Status item:** SF Symbol **flame (template image)** + a monospaced-digit number, not the
+  🔥 emoji (emoji ignores template tinting and jitters width).
 
 ## Resolved in design review
 
@@ -196,11 +244,14 @@ manipulate — no fake urgency, no guilt. Privacy is the brand.
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
-| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 0 | — | not yet run |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAR | 9 issues, 0 critical gaps |
 | Design Review | `/plan-design-review` | UI/UX gaps | 1 | CLEAR | score 6/10 → 9/10, 6 decisions |
+| Outside Voice | eng-review | Independent challenge (Claude) | 1 | issues_found | 7 macOS footguns, all folded in |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
 
-- **UNRESOLVED:** 0 (3 taste decisions resolved; 4 minor items deferred to open questions)
-- **VERDICT:** DESIGN CLEARED — states, accessibility (incl. reduced-motion), tokens, and
-  celebration taste locked. Run `/plan-eng-review` to lock the architecture (StatsStore,
-  onboarding window, celebration controller, popover) before building.
+- **CROSS-MODEL:** outside voice challenged the LoadState-progress decision (→ two-step
+  WhisperKit.download for real %) and surfaced 6 accessory-app/threading footguns, all folded.
+- **UNRESOLVED:** 0
+- **VERDICT:** DESIGN + ENG CLEARED — architecture locked (StatsStore threading + streak
+  correctness + persistence, LoadState two-step, accessory-app popover/window, celebration
+  panel), StatsStore fully test-spec'd. Ready to implement Phase 1.
