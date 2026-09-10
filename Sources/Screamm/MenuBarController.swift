@@ -15,6 +15,10 @@ final class MenuBarController {
         p.behavior = .transient
         return p
     }()
+    private var previewHandler: (() -> Void)?
+
+    /// Dev affordance: right-click → "Preview celebration". Wired by AppDelegate.
+    func setPreviewCelebration(_ handler: @escaping () -> Void) { previewHandler = handler }
 
     init(stats: StatsStore) {
         self.stats = stats
@@ -100,8 +104,17 @@ final class MenuBarController {
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
     }
 
+    @objc private func previewCelebration() { previewHandler?() }
+
     private func showContextMenu() {
         let menu = NSMenu()
+        if previewHandler != nil {
+            let preview = NSMenuItem(
+                title: "Preview celebration", action: #selector(previewCelebration), keyEquivalent: "")
+            preview.target = self
+            menu.addItem(preview)
+            menu.addItem(.separator())
+        }
         let quit = NSMenuItem(
             title: "Quit Screamm", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quit.target = NSApp

@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hotkey = HotkeyManager()
 
     private let overlay = OverlayController()
+    private let celebration = CelebrationController()
     private let stats = StatsStore()
     private let onboarding = OnboardingWindowController()
     private var coordinator: RecordingCoordinator?
@@ -22,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         let menuBar = MenuBarController(stats: stats)
         self.menuBar = menuBar
+        menuBar.setPreviewCelebration { [weak self] in self?.celebration.celebrate(.words1k) }
 
         let coordinator = RecordingCoordinator(
             recorder: recorder,
@@ -50,8 +52,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             overlay.flashSuccess()
             if self?.onboardingActive == true { self?.onboarding.model.didDictate = true }
         }
-        coordinator.onMilestone = { milestone in
+        coordinator.onMilestone = { [weak self] milestone in
             NSLog("Screamm milestone reached: \(milestone.rawValue)")
+            // During onboarding, card 4 owns the celebration (no triple-fire).
+            guard self?.onboardingActive != true else { return }
+            self?.celebration.celebrate(milestone)
         }
 
         // Model load state → menu bar + onboarding card 4.

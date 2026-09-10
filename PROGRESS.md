@@ -3,6 +3,10 @@
 Newest first. One line per meaningful milestone: what, and why it mattered.
 
 ## 2026-09
+- **Onboarding/stats Phase 3** — tiered milestone celebrations: confetti burst + badge in a
+  separate `.nonactivatingPanel` near the pill (click-through, never steals focus),
+  auto-dismiss, reduced-motion → static badge. Suppressed during onboarding. Right-click
+  "Preview celebration" dogfood affordance. **Onboarding/stats feature COMPLETE for v0.2.**
 - **Onboarding/stats Phase 2** — 4-card onboarding window (welcome → mic → accessibility →
   try-it), background model download with REAL progress (two-step WhisperKit.download →
   LoadState), `.regular`↔`.accessory` activation flip, first-run gate (UserDefaults),
