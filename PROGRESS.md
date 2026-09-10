@@ -3,6 +3,11 @@
 Newest first. One line per meaningful milestone: what, and why it mattered.
 
 ## 2026-09
+- **Onboarding/stats Phase 2** — 4-card onboarding window (welcome → mic → accessibility →
+  try-it), background model download with REAL progress (two-step WhisperKit.download →
+  LoadState), `.regular`↔`.accessory` activation flip, first-run gate (UserDefaults),
+  keyboard nav + reduced-motion. Fixed the stats popover clipping (NSHostingController
+  sizingOptions).
 - **Onboarding/stats Phase 1** — `StatsStore` (local JSON, Calendar-safe streaks, atomic write,
   milestones), coordinator `onSuccess`/`onMilestone` hooks, green ✓ micro-reward on the pill,
   and the stats popover (streak + week row + words/days + time saved) from the menu bar.

@@ -37,6 +37,16 @@ final class MenuBarController {
         statusItem.button?.toolTip = "Secure input active — press ⌘V to paste"
     }
 
+    func reflectLoadState(_ state: LoadState) {
+        switch state {
+        case .idle:                  setStatus("Screamm")
+        case .downloading(let f):    setStatus("Downloading model… \(Int(f * 100))%")
+        case .warming:               setStatus("Warming up…")
+        case .ready:                 setStatus("Ready — hold Right ⌘ to dictate")
+        case .failed:                setStatus("Model load failed — see Console")
+        }
+    }
+
     func update(for state: RecordingState) {
         switch state {
         case .idle:         refreshStreak()
@@ -81,8 +91,12 @@ final class MenuBarController {
         }
         // Accessory apps must activate or the popover's SwiftUI controls get no events.
         NSApp.activate(ignoringOtherApps: true)
-        popover.contentViewController = NSHostingController(
+        let host = NSHostingController(
             rootView: StatsPanel(data: stats.data, onQuit: { NSApp.terminate(nil) }))
+        // Size the popover to the SwiftUI content — without this the popover can be
+        // mis-sized and clip above the top of the screen.
+        host.sizingOptions = [.preferredContentSize]
+        popover.contentViewController = host
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
     }
 
