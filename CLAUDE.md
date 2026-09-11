@@ -33,8 +33,9 @@ Working v0.4, on-device, dogfooded live. Everything below is DONE and on `main`.
 - **Per-app context (code mode):** dictating into a dev app (Xcode/VS Code/Terminal/Cursor/…)
   auto-skips sentence capitalization (code is case-sensitive). Frontmost app captured at press;
   settings toggle + editable app list. `ScreammKit/Context/` + `Screamm/SystemContextResolver.swift`.
-- **Stats card polish:** arrow-less custom borderless window (no bg mismatch), living flame,
-  flame+number header, aligned 3-metric row (words · days · saved).
+- **Stats card:** arrow-less custom borderless window (no bg mismatch), living flame,
+  flame+number header, and a TWO-metric row (words · saved). "Days" was removed: the streak at
+  the top already answers it.
 - **v0.3 — spoken lists:** `Cleanup/SpokenListFormatter.swift` turns spoken structure into real
   lists. Auto-detect needs **consecutive ordinals starting at "first"**, each with real content
   (so "I was first and she was second" stays prose); explicit "numbered/bullet list",
@@ -46,12 +47,15 @@ Working v0.4, on-device, dogfooded live. Everything below is DONE and on `main`.
   `profile.possessive` / `profile.addressed(_:)`, which degrade to "Your…" / "Nice work!".
 - **v0.3 — cleanup:** removed the "Preview celebration" dev affordance; the right-click menu is
   now just Settings + Quit, and the stats-card footer button says "Settings".
-- **v0.4 — Screammy the squid: DONE.** `Overlay/Screammy.swift`. Orange squid with a teal
-  handlebar moustache who sits on the pill and hooks his tentacles around both ends. Moods map to
-  state (listening / thinking / success). Present only during dictation, since he lives on the
-  pill. Built from the user's own reference art (`ref_image_mascot.jpg`). Measured at
-  **0.065 ms/frame, 0.19% of one core at 30fps** — it runs alongside ANE decode, so this was a
-  gate, not a nicety.
+- **Settings: rebuilt.** Sidebar (Dictionary / Per-app / About) instead of two bare tabs. Shared
+  chrome in `Settings/SettingsChrome.swift` — every row is label + one-line explanation on the
+  left, control on the right. Per-app rows show real app icons via NSWorkspace. New About pane
+  states the privacy promise in the UI, not just the README.
+- **App icon: DONE.** Generated, not hand-drawn — `Scripts/make-icon.swift` renders the 1024px
+  master and `Scripts/make-icon.sh` builds `Resources/AppIcon.icns`. Re-run it to change the mark.
+- **Mascot: REMOVED.** A SwiftUI squid shipped briefly in v0.4 and was pulled — it crowded the
+  pill without earning its space. Reference art kept at `docs/assets/mascot-reference.jpg` if it
+  ever comes back. Do not re-add it without being asked.
 
 **Baselines / plans:** `docs/streak-and-animations.md` (streak logic + full animation
 inventory), `docs/onboarding-stats-plan.md` (design + eng reviewed). Deferred: `TODOS.md`.
@@ -86,17 +90,19 @@ Sources/
     StatsWindowController.swift  # arrow-less borderless window that hosts the card
     SystemContextResolver.swift  # frontmost-app → CleanupMode (NSWorkspace)
     Overlay/                  # Theme.swift, WaveformView.swift, OverlayController.swift (pill),
-                              #   Screammy.swift (the mascot, one Canvas), AnimatedFlame.swift,
-                              #   CelebrationView.swift + CelebrationController.swift
+                              #   AnimatedFlame.swift, CelebrationView + CelebrationController
     Onboarding/               # OnboardingModel/View/WindowController.swift (5-card first run)
-    Settings/                 # SettingsView (2 tabs) + DictionarySettingsView
-                              #   + CodeModeSettingsView + SettingsWindowController.swift
+    Settings/                 # SettingsView (sidebar) + SettingsChrome (shared row/card/page)
+                              #   + Dictionary / CodeMode / About panes + SettingsWindowController
   ScreammSpike/               # throwaway engine spike (latency gate) — delete eventually
 Tests/ScreammKitTests/        # Swift Testing suite (Cleanup, SpokenList, Coordinator, Stats,
                               #   Dictionary, Context, Profile, Audio) — 74 tests
-Scripts/                      # make-cert.sh (self-signed cert), build-app.sh (build+sign .app)
+Scripts/                      # make-cert.sh (self-signed cert), build-app.sh (build+sign .app),
+                              #   make-icon.sh + make-icon.swift (generate Resources/AppIcon.icns)
 Resources/                    # Info.plist (LSUIElement, mic usage), Screamm.entitlements (no sandbox)
-docs/                         # onboarding-stats-plan.md, streak-and-animations.md
+docs/                         # onboarding-stats-plan.md, streak-and-animations.md,
+                              #   assets/ (README banner + icon + mascot reference)
+LICENSE                       # MIT
 README.md DESIGN.md TODOS.md SPIKE.md PROGRESS.md
 ```
 
@@ -134,15 +140,6 @@ pkill -x Screamm 2>/dev/null; open Screamm.app # relaunch
   handle it: min-duration, the **silence gate** (`AudioAnalysis.isLikelySilent` drops clips with
   no speech energy BEFORE transcribing — peak<0.02 AND rms<0.008), and empty/low-confidence
   suppression after cleanup. If a specific mic still leaks, tune the thresholds in `AudioAnalysis`.
-- **The mascot and the pill share a hue.** The reference art puts an orange squid on a PALE pill;
-  ours sits on the brand-orange pill, so without the deep `Screammy.outline` contour the tentacles
-  are literally invisible against it. Don't "simplify" that outline away. Same reason the limbs
-  stop at the pill's top rim: anything lower covers the waveform bars and the success ✓.
-- **Panel growth must be top-only.** `WaveformView` reserves Screammy's head room with
-  `.padding(.top, 30 + Screammy.Metrics.headSpace(...))` while bottom padding stays 30, and the
-  panel is positioned by its BOTTOM edge. That's what keeps the pill from moving when he appears.
-  `headSpace` depends only on the pill HEIGHT (a constant), which is why it can be reserved before
-  the pill is ever measured.
 - **Repo hygiene:** `$HOME` is itself a git repo on this machine. This project has its own
   `.git` — always run git commands from the project dir.
 

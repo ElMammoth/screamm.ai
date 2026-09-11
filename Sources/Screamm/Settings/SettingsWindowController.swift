@@ -34,10 +34,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             dictionary: dictionaryModel,
             codeMode: codeModeModel,
             onDone: { [weak self] in self?.window?.close() }))
+        host.sizingOptions = [.preferredContentSize]
         let window = NSWindow(contentViewController: host)
         window.title = "Screamm — Settings"
         window.styleMask = [.titled, .closable]
-        window.setContentSize(NSSize(width: 500, height: 470))
+        window.setContentSize(NSSize(width: 660, height: 480))
         window.center()
         window.isReleasedWhenClosed = false
         window.delegate = self

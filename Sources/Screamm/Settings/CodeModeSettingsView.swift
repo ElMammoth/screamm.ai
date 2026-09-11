@@ -42,55 +42,74 @@ struct CodeModeSettingsView: View {
     @ObservedObject var model: CodeModeEditModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Per-app code mode")
-                    .font(.system(size: 18, weight: .heavy, design: .rounded))
-                Text("In these apps, Screamm skips sentence capitalization so code stays as you say it (func, not Func).")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(.secondary)
-            }
-
-            Toggle(isOn: $model.smartModeEnabled) {
-                Text("Smart code mode")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-            }
-
-            ScrollView {
-                VStack(spacing: 6) {
-                    ForEach(model.codeApps) { app in
-                        HStack(spacing: 8) {
-                            Text(app.name)
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            Text(app.bundleID)
-                                .font(.system(size: 11, design: .monospaced))
-                                .foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
-                            Spacer()
-                            Button { model.remove(app.bundleID) } label: {
-                                Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    if model.codeApps.isEmpty {
-                        Text("No apps yet. Add one below.")
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+        SettingsPage(
+            title: "Per-app",
+            subtitle: "Screamm normally capitalizes sentences for you. In a code editor that's wrong — you want func, not Func. These apps get raw, uncapitalized text instead."
+        ) {
+            VStack(alignment: .leading, spacing: 9) {
+                SettingsCard {
+                    SettingsRow(
+                        title: "Code mode",
+                        description: "Detect the app you're dictating into and skip auto-capitalization in the ones below."
+                    ) {
+                        Toggle("", isOn: $model.smartModeEnabled)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .tint(Theme.brand)
                     }
                 }
-            }
-            .frame(maxHeight: .infinity)
-            .opacity(model.smartModeEnabled ? 1 : 0.45)
-            .disabled(!model.smartModeEnabled)
 
-            Button { model.addApp() } label: {
-                Label("Add app…", systemImage: "plus.circle.fill")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                SettingsSectionHeader(text: "Apps in code mode")
+                    .padding(.top, 4)
+
+                SettingsCard {
+                    if model.codeApps.isEmpty {
+                        SettingsEmptyState(
+                            symbol: "chevron.left.forwardslash.chevron.right",
+                            title: "No apps yet",
+                            hint: "Add your editor or terminal and Screamm will stop capitalizing in it.")
+                    } else {
+                        ForEach(Array(model.codeApps.enumerated()), id: \.element.id) { index, app in
+                            if index > 0 { SettingsDivider() }
+                            appRow(app)
+                        }
+                    }
+                }
+                .opacity(model.smartModeEnabled ? 1 : 0.45)
+                .disabled(!model.smartModeEnabled)
+
+                HStack {
+                    SettingsAddButton(title: "Add app…") { model.addApp() }
+                        .disabled(!model.smartModeEnabled)
+                    Spacer()
+                }
+                .padding(.top, 2)
             }
-            .buttonStyle(.plain).foregroundStyle(Theme.brand)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func appRow(_ app: AppContextSettings.AppEntry) -> some View {
+        HStack(spacing: 10) {
+            icon(for: app.bundleID)
+                .resizable().frame(width: 22, height: 22)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(app.name).font(.system(size: 13, weight: .semibold))
+                Text(app.bundleID)
+                    .font(.system(size: 10.5, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1).truncationMode(.middle)
+            }
+            Spacer(minLength: 8)
+            SettingsRemoveButton { model.remove(app.bundleID) }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 9)
+    }
+
+    /// Real app icons make the list scannable and prove Screamm resolved the right bundle id.
+    private func icon(for bundleID: String) -> Image {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            return Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+        }
+        return Image(systemName: "app.dashed")
     }
 }

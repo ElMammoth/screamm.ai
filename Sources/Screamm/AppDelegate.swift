@@ -1,6 +1,31 @@
 import AppKit
 import ScreammKit
 
+// ───────────────────────────────────────────────────────────────────────────────
+// TEMPORARY — PREVIEW FLAGS.  ⚠️ REVERT THIS WHOLE BLOCK when you're done looking.
+//
+// `onboarding = true` forces the first-run window on every launch so you can review
+// it without wiping your real state (preview mode deliberately does NOT mark
+// onboarding complete, and does NOT re-download anything).
+//
+// To revert: set both to false, or delete this enum and its two `if Preview.…`
+// uses in `applicationDidFinishLaunching`. Nothing else references it.
+//
+// You can also override without editing code:
+//   SCREAMM_PREVIEW=onboarding ./Screamm.app/Contents/MacOS/Screamm
+//   SCREAMM_PREVIEW=settings   ./Screamm.app/Contents/MacOS/Screamm
+// ───────────────────────────────────────────────────────────────────────────────
+enum Preview {
+    static var onboarding: Bool { flag("onboarding", fallback: true) }
+    static var settings: Bool { flag("settings", fallback: false) }
+
+    private static func flag(_ name: String, fallback: Bool) -> Bool {
+        let env = ProcessInfo.processInfo.environment["SCREAMM_PREVIEW"] ?? ""
+        guard !env.isEmpty else { return fallback }
+        return env.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.contains(name)
+    }
+}
+
 /// Wires ScreammKit together and owns the object graph. Menu-bar-only app (no dock icon).
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -23,6 +48,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var coordinator: RecordingCoordinator?
     private var menuBar: MenuBarController?
     private var onboardingActive = false
+    /// TEMPORARY — set when the onboarding window was forced open by `Preview`.
+    private var previewingOnboarding = false
 
     private static let onboardingKey = "onboardingCompleted"
 
@@ -78,6 +105,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkey.onRelease = { [weak coordinator] in coordinator?.handleRelease() }
         hotkey.start()   // always on; no-ops until Accessibility is granted
 
+        // TEMPORARY — preview hooks. Remove with the `Preview` enum above.
+        if Preview.settings { settings.show() }
+        if Preview.onboarding {
+            previewingOnboarding = true
+            startOnboarding()
+            return
+        }
+
         if UserDefaults.standard.bool(forKey: Self.onboardingKey) {
             Task { await returningBootstrap() }
         } else {
@@ -98,6 +133,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func startOnboarding() {
         onboardingActive = true
         onboarding.model.onKickoffLoad = { [weak self] in
+            guard self?.previewingOnboarding != true else { return }   // TEMPORARY
             Task { await self?.transcriber.load() }
         }
         onboarding.model.onSaveName = { [weak self] name in
@@ -109,6 +145,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func completeOnboarding() {
         onboardingActive = false
+        // TEMPORARY — a preview run must not touch your real first-run state.
+        guard !previewingOnboarding else { previewingOnboarding = false; return }
         UserDefaults.standard.set(true, forKey: Self.onboardingKey)
         // If the user skipped before the download started, load now.
         if case .idle = transcriber.loadState {

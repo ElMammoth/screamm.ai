@@ -30,9 +30,6 @@ final class WaveformModel: ObservableObject {
         isTranscribing = false
         success = false
     }
-
-    /// Newest level — drives Screammy's tentacle pulse.
-    var level: CGFloat { levels.last ?? 0 }
 }
 
 /// The pill: a compact brand-orange capsule of live audio bars, Dynamic-Island sized,
@@ -72,16 +69,6 @@ struct WaveformView: View {
                 .fill(fillColor)
                 .shadow(color: fillColor.opacity(0.5), radius: 16, y: 2)
         )
-        // Screammy rides on top. The GeometryReader hands him the capsule's exact rect, so he
-        // wraps whatever width the pill currently is. Overlays aren't clipped, so he draws
-        // above the pill into the margin reserved below.
-        .overlay(alignment: .top) {
-            GeometryReader { geo in
-                let m = Screammy.Metrics(pillSize: geo.size)
-                ScreammyView(mood: mood, level: model.level, pillSize: geo.size)
-                    .offset(x: -m.overhang, y: -m.headSpace)
-            }
-        }
         .animation(.easeOut(duration: 0.09), value: model.levels)
         .animation(.easeInOut(duration: 0.2), value: model.isTranscribing)
         .animation(.easeInOut(duration: 0.15), value: model.success)
@@ -90,20 +77,7 @@ struct WaveformView: View {
         // Generous transparent margin so the soft glow fades fully to zero inside the
         // panel instead of being clipped into a visible rectangle. Must exceed the
         // shadow radius (16) + offset.
-        .padding(.horizontal, 30)
-        .padding(.bottom, 30)
-        // The extra top margin is Screammy's head room. It's added ONLY at the top, and the
-        // panel is pinned by its bottom edge, so the pill does not move a pixel when he
-        // arrives — the panel just grows upward. The tentacles' sideways reach (`overhang`)
-        // is already smaller than the 30pt glow margin, so the width is unchanged.
-        .padding(.top, 30 + Screammy.Metrics.headSpace(pillHeight: capsuleHeight))
-    }
-
-    /// Recording state → Screammy's expression.
-    private var mood: ScreammyMood {
-        if model.success { return .success }
-        if model.isTranscribing { return .thinking }
-        return .listening
+        .padding(30)
     }
 
     /// Bars driven by live mic levels (while recording).

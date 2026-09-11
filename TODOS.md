@@ -16,25 +16,21 @@
   actually seen when VS Code is focused (`com.microsoft.VSCode` vs Cursor/Insiders/Codium builds)
   and whether the press-time capture is racing the overlay/panel taking focus. Log the resolved
   id + mode per dictation.
-- **The settings window is not user-friendly.** Two bare tabs of raw tables. Needs a real pass:
-  clear section headers, explanatory copy, sensible empty states, and a visible way to reach it.
-  Do a `/plan-design-review` + Mobbin pass on settings for a utility app before rebuilding it.
+- ~~The settings window is not user-friendly.~~ **FIXED** — rebuilt with a sidebar, explained
+  rows, real app icons, and an About pane carrying the privacy promise.
 - **Name personalization was pulled back** (2026-09-11): "Cyprien's day streak" reads oddly on
   your own machine — you already know whose streak it is. The name is now asked at onboarding
   only and used just in the celebration line. Revisit only if there's a use that earns it.
 
-## Next up
-- **v0.4 — Screammy the squid.** Native SwiftUI mascot sitting on top of the waveform pill,
-  tentacles wrapping it; moods idle/listening/thinking/success; present only during dictation.
-  Spec lives in the v0.3 design doc under "(v0.4, DEFERRED)". **Gated on** `/plan-eng-review`
-  (pill-panel resize/anchor + a "must not regress ~1.83s warm decode" budget; confirm an
-  animated `Path` in a `.nonactivatingPanel` throttles when occluded) and `/plan-design-review`
-  on the visual.
+## Temporary — REVERT THIS
+- **Onboarding preview flag is ON.** `Preview.onboarding = true` at the top of
+  `Sources/Screamm/AppDelegate.swift` forces the first-run window on every launch. Set both
+  `Preview` flags to false (or delete the enum and its two uses) once the screens are reviewed.
 
 ## Cleanup before a public release (v1)
 - **Notarization + distribution** — paid Apple Developer ID, notarized DMG, Homebrew cask,
   Sparkle auto-update. Currently self-signed/personal only (`Scripts/`).
-- Public-facing README polish + a simple landing page.
+- A simple landing page (the README already reads as one; a real site is the next step).
 
 ## Accuracy / engine
 - **Better voice-activity detection** — the current silence gate (`AudioAnalysis.isLikelySilent`,

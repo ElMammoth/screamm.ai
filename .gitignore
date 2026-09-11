@@ -12,7 +12,7 @@ DerivedData/
 Models/
 *.mlmodelc
 
-# built app bundle
+# built app bundle (produced by Scripts/build-app.sh)
 Screamm.app/
 
 # spike scratch / voice recordings (never commit audio)
@@ -24,3 +24,8 @@ Screamm.app/
 
 # macOS
 .DS_Store
+
+# Local certs / keys — never commit these
+*.p12
+*.pem
+*.cer

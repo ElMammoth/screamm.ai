@@ -99,11 +99,11 @@ struct StatsPanel: View {
 
     // MARK: Metrics (clean aligned row, Ahead/pushr style — no tinted background)
 
+    /// Two metrics, not three: the streak already answers "how many days", so a separate
+    /// DAYS column was saying the same thing twice.
     private var metrics: some View {
         HStack(alignment: .top, spacing: 8) {
             metric(value: isEmpty ? "—" : compactWords, label: "words")
-            divider
-            metric(value: isEmpty ? "—" : "\(data.perDay.count)", label: "days")
             divider
             metric(value: isEmpty ? "—" : savedValue, label: "saved")
         }

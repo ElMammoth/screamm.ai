@@ -1,90 +1,172 @@
-# Screamm.ai
+<div align="center">
 
-Open-source, **100% on-device** voice-to-text for macOS. Hold a key, talk, release,
-and polished text lands wherever your cursor is. Your voice never leaves your Mac.
+<img src="docs/assets/banner.png" alt="Screamm.ai — hold a key, talk, your words land where your cursor is" width="100%">
 
-An open-source alternative to Wispr Flow, powered by [WhisperKit](https://github.com/argmaxinc/WhisperKit)
-(Whisper `large-v3-turbo` on the Apple Neural Engine). No cloud, no API keys, no accounts,
-no telemetry.
+<br>
 
-> **Status: working v0.3** (personal-first; a notarized public release is a later milestone).
+**Voice-to-text for macOS that never phones home.**
 
-## Features
+Hold Right ⌘, say what you mean, let go. Polished text appears wherever your cursor already was — your editor, Slack, a form field, anywhere. The audio is transcribed on your own Neural Engine and thrown away.
 
-- **Hold to talk, on-device.** Hold Right ⌘, speak, release — cleaned text pastes where your cursor is.
-- **Say a list, get a list.** "First, buy milk. Second, call mom. Third, ship it." pastes as a real
-  numbered list. Or say "bullet list" / "new bullet" / "end list" explicitly. Conservative on
-  purpose — "first, I went to the store" stays prose.
-- **Bottom-center waveform pill** that slides up, shows live audio, and a "thinking" wave while it works.
-- **Streak + stats** (words dictated, days used, estimated time saved) with milestone celebrations —
-  all **local-only**, no accounts, no telemetry.
-- **Knows your first name** (optional, skippable) so the streak and celebrations feel like yours.
-  Stored on your Mac, nowhere else.
-- **Friendly first-run onboarding** with in-context permission priming.
-- **Custom dictionary** to fix mistranscriptions (e.g. "screen" → "Screamm").
-- **Per-app code mode** — dictating into Xcode/VS Code/Terminal keeps code lowercase (no auto-capitalization).
-- **Silence + hallucination gates** so it never types "Thank you." when you said nothing.
-- Rule-based cleanup (fillers, "new line", capitalization). Auto-detect language.
+An open-source alternative to Wispr Flow.
 
-See `docs/streak-and-animations.md` for the streak logic + animation baseline, and `TODOS.md` for what's next.
+<br>
 
-## Requirements
+![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111?style=flat-square)
+![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-M1%2B-111?style=flat-square)
+![Swift 6](https://img.shields.io/badge/Swift-6-F48C02?style=flat-square)
+![License MIT](https://img.shields.io/badge/license-MIT-F48C02?style=flat-square)
+![No telemetry](https://img.shields.io/badge/telemetry-none-2ea043?style=flat-square)
 
-- Apple Silicon Mac (M1 or newer)
-- macOS 14+
-- Full Xcode (for building the app; the CLI spike only needs Command Line Tools)
+</div>
 
-## Try the engine spike (fastest)
+<br>
 
-Answers "is local turbo fast enough on my Mac?" without building the whole app.
+## Why this exists
+
+Dictation tools are fast and good now. They are also, almost without exception, microphones pointed at someone else's servers.
+
+Screamm is the other trade. Whisper `large-v3-turbo` runs on the Apple Neural Engine, on your machine. There is no API key to paste, no account to make, no usage dashboard, no opt-out buried in settings. **1.83 s** to transcribe a held phrase on an M2 Pro, warm.
+
+If you dictate anything you would not paste into a stranger's text box — client work, medical notes, an unreleased product, a hard email — this is the one you want.
+
+<br>
+
+## What it feels like
+
+<div align="center">
+<img src="docs/assets/pill.png" alt="The Screamm dictation pill" width="520">
+</div>
+
+Hold **Right ⌘**. A pill slides up from the bottom of the screen and shows your voice as you speak. Let go. It pulses while it thinks, flashes a green check, and your text is already in the field. No window to focus, no button to click, no transcript to copy.
+
+<br>
+
+## What's in it
+
+| | |
+|---|---|
+| 🎙 **Hold to talk** | Right ⌘ down to record, up to paste. Works in every app, including ones that block other tools. |
+| 🧠 **On-device Whisper** | `large-v3-turbo` on the ANE. The model downloads once; after that you can pull the ethernet cable. |
+| ✍️ **Cleanup that isn't annoying** | Strips "um" and "uh", fixes capitalization and spacing, understands "new line" and "new paragraph". |
+| 📋 **Spoken lists** | "First, buy milk. Second, call mom." comes out as a real numbered list. |
+| 💻 **Per-app code mode** | In Xcode, VS Code, or a terminal it stops capitalizing, so you get `func`, not `Func`. |
+| 📖 **Custom dictionary** | Teach it the names and jargon it always gets wrong. Whole-word, case-insensitive. |
+| 🔥 **Streaks** | Words dictated, time saved, a day counter. Stored in a JSON file on your disk and nowhere else. |
+| 🤫 **Silence gates** | Three of them, so a stray key-hold never types "Thank you." at your boss. |
+| 🌍 **Multilingual** | Whisper auto-detects the language you speak. |
+
+<br>
+
+## Install
+
+Requires an Apple Silicon Mac on macOS 14+, and Xcode to build.
 
 ```bash
-swift run --build-system native ScreammSpike sample.aiff
-```
-
-See `SPIKE.md`. On an M2 Pro this measured **1.83s warm decode** (the viability gate is ≤2s).
-
-## Build the app
-
-macOS ties permissions to an app's code signature, so create a **stable self-signed
-certificate** once (no Apple Developer ID, $0). Ad-hoc signing does NOT persist
-permissions across rebuilds.
-
-```bash
-./Scripts/make-cert.sh          # prints the 2-minute Keychain Access steps
+git clone https://github.com/ElMammoth/screamm.ai.git
+cd screamm.ai
+./Scripts/make-cert.sh                                       # once — see below
 SCREAMM_CERT="Screamm Self-Signed" ./Scripts/build-app.sh
 open ./Screamm.app
 ```
 
-First launch: grant **Microphone** + **Accessibility** when prompted, then it downloads
-the turbo model once (~600MB–1.5GB). Look for 🎙️ in the menu bar. **Hold Right ⌘** to
-dictate; release to paste into whatever app is focused.
+Grant **Microphone** and **Accessibility** when asked, wait for the one-time model download, and look for the mic in your menu bar. Then hold Right ⌘ and say something.
+
+<details>
+<summary><b>Why the certificate step?</b></summary>
+
+<br>
+
+macOS ties Accessibility and Microphone permission to an app's code signature. Ad-hoc signing (`codesign -s -`) produces a new signature on every build, so macOS treats each rebuild as a brand-new app and makes you re-grant permission every single time.
+
+`make-cert.sh` creates a stable self-signed certificate so the signature stays constant and your permissions stick. It costs nothing and needs no Apple Developer account. A notarized release build is a separate, later milestone.
+
+</details>
+
+<details>
+<summary><b>Uninstalling, and where your data lives</b></summary>
+
+<br>
+
+Everything Screamm keeps is in two places:
+
+```
+~/Library/Application Support/Screamm/     # streak, dictionary, per-app settings (plain JSON)
+~/Documents/huggingface/                    # the downloaded Whisper model
+```
+
+Delete those two folders and the `.app`, and nothing remains. No launch agents, no login items, no receipts.
+
+</details>
+
+<br>
 
 ## How it works
 
 ```
-Right ⌘ (hold) ──▶ AudioRecorder ──▶ WhisperKitTranscriber ──▶ CleanupPipeline ──▶ ClipboardInjector
-   HotkeyManager      AVAudioEngine       large-v3-turbo          rule-based           clipboard + ⌘V
-   (NSEvent monitor    → 16kHz mono        (resident + warm)       fillers, commands,   + restore, with
-    + lost-release      Float buffer                                capitalization       secure-input guard
-    watchdog)                                                                             )
-                              all orchestrated by RecordingCoordinator (RecordingState machine)
+  Right ⌘ (hold)
+        │
+        ▼
+  HotkeyManager ───▶ AudioRecorder ───▶ WhisperKitTranscriber ───▶ CleanupPipeline ───▶ ClipboardInjector
+  NSEvent monitor    AVAudioEngine      large-v3-turbo             fillers, commands,   clipboard + ⌘V,
+  + lost-release     → 16 kHz mono      resident + warm            capitalization,      then restores your
+  watchdog           Float buffer       on the ANE                 lists, dictionary    old clipboard
+        │
+        └──────────────── RecordingCoordinator (idle → recording → transcribing → injecting) ──────────────┘
 ```
 
-Everything runs on-device. Audio is discarded the instant it's transcribed; no history,
-no logging, no network except the one-time model download.
+Audio exists as a `Float` buffer in memory and is released the moment transcription returns. It is never written to disk. The only network call Screamm ever makes is the one-time model download.
 
-- `Sources/ScreammKit/` — the logic + macOS integrations (testable; `swift test`)
-- `Sources/Screamm/` — the thin menu-bar app
-- `Sources/ScreammSpike/` — the throwaway engine spike
+<br>
 
-## Development
+## Repo layout
+
+```
+Sources/
+  ScreammKit/          the logic + macOS integrations — all of this is unit-tested
+    Core/              protocol seams + RecordingCoordinator (the state machine)
+    Audio/             AVAudioEngine tap, silence detection
+    Transcription/     WhisperKit wrapper (load states, warm-up)
+    Cleanup/           the text pipeline + spoken-list formatter
+    Dictionary/        user replacements
+    Context/           per-app code mode
+    Stats/             streak + milestones
+    Injection/         clipboard paste with secure-input guard
+    Hotkey/            Right ⌘ detection + lost-release watchdog
+  Screamm/             the thin menu-bar app (SwiftUI)
+Tests/                 74 tests, `swift test`
+Scripts/               make-cert.sh, build-app.sh, make-icon.sh
+```
 
 ```bash
-swift build        # build everything
-swift test         # run the suite (ScreammKit)
+swift build     # compile
+swift test      # 74 tests, ~5s
 ```
+
+<br>
+
+## Status
+
+Working and dogfooded daily. Personal-first: built for one person's Mac before it is built for everyone's.
+
+Honest about what's rough — open bugs and the roadmap live in [`TODOS.md`](TODOS.md), and the running build log is in [`PROGRESS.md`](PROGRESS.md). A notarized release with a Homebrew cask is the next real milestone.
+
+<br>
+
+## Contributing
+
+Issues and PRs welcome. Two rules that aren't negotiable:
+
+1. **Nothing leaves the device.** No analytics, no crash reporting, no "anonymous" usage pings, no remote config. Not behind a flag, not opt-in.
+2. **Logic goes in `ScreammKit` with a test.** The UI is dogfooded by hand; the text pipeline and the state machine are not.
+
+<br>
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
+
+<div align="center">
+<br>
+<sub>Built by <a href="https://github.com/ElMammoth">ElMammoth</a> · Powered by <a href="https://github.com/argmaxinc/WhisperKit">WhisperKit</a></sub>
+</div>

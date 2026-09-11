@@ -79,8 +79,12 @@ final class OverlayController {
             panel.animator().alphaValue = 0
             panel.animator().setFrameOrigin(NSPoint(x: origin.x, y: origin.y - 30))
         }, completionHandler: { [weak self] in
-            panel.orderOut(nil)
-            self?.model.reset()
+            // AppKit calls this back on a nonisolated context, but `model` is @MainActor.
+            // Hop explicitly rather than relying on it happening to run on the main thread.
+            MainActor.assumeIsolated {
+                panel.orderOut(nil)
+                self?.model.reset()
+            }
         })
     }
 

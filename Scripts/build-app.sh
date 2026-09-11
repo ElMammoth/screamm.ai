@@ -15,6 +15,12 @@ mkdir -p "${APP}/Contents/MacOS" "${APP}/Contents/Resources"
 cp ".build/release/Screamm" "${APP}/Contents/MacOS/Screamm"
 cp "Resources/Info.plist" "${APP}/Contents/Info.plist"
 
+if [ ! -f "Resources/AppIcon.icns" ]; then
+  echo "==> AppIcon.icns missing; generating..."
+  ./Scripts/make-icon.sh
+fi
+cp "Resources/AppIcon.icns" "${APP}/Contents/Resources/AppIcon.icns"
+
 if security find-certificate -c "${CERT}" >/dev/null 2>&1; then
   echo "==> signing with stable cert '${CERT}' (permissions persist across rebuilds)..."
   codesign --force --deep \
