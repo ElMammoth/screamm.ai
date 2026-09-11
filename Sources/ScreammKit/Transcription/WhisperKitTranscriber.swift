@@ -50,7 +50,6 @@ public final class WhisperKitTranscriber: Transcribing {
         }
     }
 
-    public var isReady: Bool { if case .ready = loadState { return true }; return false }
 
     /// Throwaway inference over 1s of silence to force the ANE JIT.
     public func warmUp() async {

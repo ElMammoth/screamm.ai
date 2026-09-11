@@ -11,8 +11,6 @@ final class StatsWindowController {
     private var panel: NSPanel?
     private var monitor: Any?
 
-    var isShown: Bool { panel != nil }
-
     func toggle(relativeTo button: NSStatusBarButton, view: @autoclosure () -> NSView) {
         if panel != nil { close() } else { open(relativeTo: button, content: view()) }
     }
