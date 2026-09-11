@@ -5,7 +5,7 @@ import Foundation
 @MainActor
 struct StatsHookTests {
     final class FakeRecorder: AudioRecording {
-        var samples: [Float] = Array(repeating: 0, count: 16_000)
+        var samples: [Float] = Array(repeating: 0.3, count: 16_000)   // non-silent
         func start() throws {}
         func stop() -> [Float] { samples }
     }

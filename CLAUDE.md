@@ -13,45 +13,62 @@ later). Repo: https://github.com/ElMammoth/screamm.ai
 
 ## Current status (keep this current)
 
-- **v0.1 headless loop: SHIPPED + working live.** Right ⌘ → record → WhisperKit turbo →
-  rule cleanup → clipboard+⌘V paste. Verified on M2 Pro: 1.83s warm decode.
-- **Waveform overlay: DONE.** Brand-orange Dynamic-Island pill, bottom-center, live
-  waveform, spring pop, deepens while transcribing.
-- **Stable signing cert: DONE.** Permissions now persist across rebuilds.
-- **Onboarding/stats: COMPLETE (Phases 1-3).** StatsStore + stats popover + micro-reward (P1);
-  4-card onboarding + two-step model download w/ progress + activation flip (P2); tiered
-  milestone confetti/badge celebrations (P3). Plan: `docs/onboarding-stats-plan.md`.
-  Note: a right-click "Preview celebration" dev affordance exists (remove before v1).
-- **Custom dictionary: DONE.** User-editable replacements (final cleanup stage) + settings
-  window; fixes "screen"→"Screamm". `Sources/ScreammKit/Dictionary/`.
-- **v0.2 feature set is essentially complete.** Possible next: per-app context (the signature
-  differentiator from the design doc), streaming transcription, or polish/QA + a public
-  release (notarization + Homebrew). Also: remove the "Preview celebration" dev affordance.
-- Deferred items: `TODOS.md`. Roadmap detail: the design doc (see "Where docs live").
+Working v0.2, on-device, dogfooded live. Everything below is DONE and on `main`:
+
+- **v0.1 core loop:** Right ⌘ hold → record → WhisperKit turbo → rule cleanup → clipboard+⌘V
+  paste. M2 Pro: 1.83s warm decode. Min-duration + **silence gate** (`AudioAnalysis.isLikelySilent`
+  drops silent clips before transcribing) + empty-suppression kill Whisper's on-silence
+  hallucinations ("Thank you.").
+- **Waveform pill:** brand-orange bottom-center island; **slides up smoothly from below**; live
+  bars while recording; a **looping "thinking" wave** while transcribing (never freezes); green
+  ✓ on success. `Screamm/Overlay/`.
+- **Stable signing cert:** permissions persist across rebuilds (`Scripts/make-cert.sh`).
+- **Onboarding/stats (Phases 1-3):** StatsStore (streak/milestones/persistence) + stats card +
+  success micro-reward; 4-card onboarding (permission priming, two-step model download w/ real
+  progress, `.regular`↔`.accessory` flip); tiered milestone confetti/badge celebrations.
+- **Custom dictionary:** user-editable replacements as the final cleanup stage + settings
+  window; fixes "screen"→"Screamm". `ScreammKit/Dictionary/`.
+- **Stats card polish:** arrow-less custom borderless window (no bg mismatch), living flame,
+  flame+number header, aligned 3-metric row (words · days · saved).
+
+**Baselines / plans:** `docs/streak-and-animations.md` (streak logic + full animation
+inventory), `docs/onboarding-stats-plan.md` (design + eng reviewed). Deferred: `TODOS.md`.
+
+**Likely next:** per-app context (signature differentiator), streaming transcription, or a QA
+pass + public release (notarization + Homebrew). Also: remove the "Preview celebration"
+right-click dev affordance before v1.
 
 ## Repo map
 
 ```
 Sources/
-  ScreammKit/            # testable logic + macOS integrations (the library)
-    Core/                # Protocols.swift (seams), RecordingCoordinator.swift (state machine)
-    State/               # RecordingState.swift (idle→recording→transcribing→injecting)
-    Audio/               # AudioRecorder.swift (AVAudioEngine tap → 16kHz mono + RMS levels)
-    Transcription/       # WhisperKitTranscriber.swift (resident + warm-up inference)
-    Cleanup/             # CleanupPipeline.swift (fillers, spoken commands, capitalization)
-    Injection/           # ClipboardInjector.swift (paste+restore, secure-input guard)
-    Hotkey/              # HotkeyManager.swift (NSEvent .flagsChanged + lost-release watchdog)
-    Permissions/         # Permissions.swift (AX + mic, deep-links)
-  Screamm/               # the thin menu-bar app (executable)
-    Main.swift           # @main @MainActor entry
-    AppDelegate.swift    # wires ScreammKit together, owns the object graph
-    MenuBarController.swift
-    Overlay/             # Theme.swift (brand), WaveformView.swift, OverlayController.swift
-  ScreammSpike/          # throwaway engine spike (latency gate) — delete eventually
-Tests/ScreammKitTests/   # Swift Testing suite (Cleanup + Coordinator)
-Scripts/                 # make-cert.sh (self-signed cert), build-app.sh (build+sign .app)
-Resources/               # Info.plist (LSUIElement, mic usage), Screamm.entitlements (no sandbox)
-docs/                    # feature plans (in-repo, versioned) — see below
+  ScreammKit/                 # testable logic + macOS integrations (the library)
+    Core/                     # Protocols.swift (seams: Transcribing/TextInjecting/AudioRecording/
+                              #   StatsRecording/DictionaryProviding), RecordingCoordinator.swift
+                              #   (state machine + onSuccess/onMilestone hooks + gates)
+    State/                    # RecordingState.swift (idle→recording→transcribing→injecting)
+    Audio/                    # AudioRecorder.swift (AVAudioEngine tap → 16kHz + RMS levels),
+                              #   AudioAnalysis.swift (isLikelySilent — silence gate)
+    Transcription/            # WhisperKitTranscriber.swift (LoadState, two-step download, warm-up)
+    Cleanup/                  # CleanupPipeline.swift (fillers, spoken commands, caps, + dictionary)
+    Dictionary/               # CustomDictionary.swift (replacements) + DictionaryStore.swift
+    Stats/                    # Stats.swift (StatsData: streak/milestones) + StatsStore.swift
+    Injection/                # ClipboardInjector.swift (paste+restore, secure-input guard)
+    Hotkey/                   # HotkeyManager.swift (NSEvent .flagsChanged + lost-release watchdog)
+    Permissions/              # Permissions.swift (AX + mic, deep-links)
+  Screamm/                    # the thin menu-bar app (executable)
+    Main.swift AppDelegate.swift MenuBarController.swift
+    StatsPanel.swift          # the stats card (SwiftUI)
+    StatsWindowController.swift  # arrow-less borderless window that hosts the card
+    Overlay/                  # Theme.swift, WaveformView.swift, OverlayController.swift (pill),
+                              #   AnimatedFlame.swift, CelebrationView.swift + CelebrationController.swift
+    Onboarding/               # OnboardingModel/View/WindowController.swift (4-card first run)
+    Settings/                 # DictionarySettingsView.swift + SettingsWindowController.swift
+  ScreammSpike/               # throwaway engine spike (latency gate) — delete eventually
+Tests/ScreammKitTests/        # Swift Testing suite (Cleanup, Coordinator, Stats, Dictionary, Audio)
+Scripts/                      # make-cert.sh (self-signed cert), build-app.sh (build+sign .app)
+Resources/                    # Info.plist (LSUIElement, mic usage), Screamm.entitlements (no sandbox)
+docs/                         # onboarding-stats-plan.md, streak-and-animations.md
 README.md DESIGN.md TODOS.md SPIKE.md PROGRESS.md
 ```
 
@@ -85,8 +102,10 @@ pkill -x Screamm 2>/dev/null; open Screamm.app # relaunch
   watchdog (modifier-flags poll + max-duration) recovers it.
 - **Secure input:** `IsSecureEventInputEnabled()` is SYSTEM-WIDE, not per-field. Treat it as
   a hint; when true, don't silently paste — leave text on clipboard + notify.
-- **Whisper hallucinates on silence** ("Thank you."); the min-duration gate + empty-suppression
-  in RecordingCoordinator handle it.
+- **Whisper hallucinates on silence** ("Thank you."). Three gates in `RecordingCoordinator`
+  handle it: min-duration, the **silence gate** (`AudioAnalysis.isLikelySilent` drops clips with
+  no speech energy BEFORE transcribing — peak<0.02 AND rms<0.008), and empty/low-confidence
+  suppression after cleanup. If a specific mic still leaks, tune the thresholds in `AudioAnalysis`.
 - **Repo hygiene:** `$HOME` is itself a git repo on this machine. This project has its own
   `.git` — always run git commands from the project dir.
 

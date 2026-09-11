@@ -103,7 +103,7 @@ final class MenuBarController {
         let menu = NSMenu()
         if openDictionaryHandler != nil {
             let dict = NSMenuItem(
-                title: "Edit dictionary…", action: #selector(openDictionary), keyEquivalent: "")
+                title: "Edit dictionary", action: #selector(openDictionary), keyEquivalent: "")
             dict.target = self
             menu.addItem(dict)
         }

@@ -18,6 +18,11 @@ least one successful dictation. A day "counts" the moment one dictation is recor
 (`RecordingCoordinator` → `StatsStore.recordDictation` → `StatsData.record`). There is no
 minimum word count; a single successful dictation marks the day.
 
+A "successful dictation" is one that passed every `RecordingCoordinator` gate: **min-duration**,
+the **silence gate** (`AudioAnalysis.isLikelySilent` — drops clips with no speech energy, so a
+silent hold never counts, pastes, or hallucinates "Thank you."), and **non-empty** cleaned
+output. Silent/empty attempts never touch stats.
+
 `longestStreak` = the best `currentStreak` ever reached.
 
 ### 1.2 Data model (`StatsData`, persisted to `~/Library/Application Support/Screamm/stats.json`)
@@ -108,8 +113,8 @@ The bottom-center dictation pill. States and their motion:
 
 | State | Motion | Spec |
 |---|---|---|
-| Pop-in | spring scale 0.8→1 + fade | `spring(response: 0.32, damping: 0.62)`, driven by `WaveformModel.appear` |
-| Pop-out | reverse; panel removed ~0.3s later | same spring |
+| Slide-in | the whole panel slides UP from ~46px below + fades in | `NSAnimationContext` easeOut 0.32s (`OverlayController.show`); reduced-motion → plain fade |
+| Slide-out | slides down ~30px + fades, then panel removed | easeIn 0.22s (`OverlayController.hide`) |
 | Recording (live) | bars follow live RMS mic levels | `easeOut 0.09` on `levels`; brand-orange fill |
 | **Thinking / processing** | **looping sine wave across the bars** (never freezes) | `TimelineView(.animation)`, `sin(t·3.2 + i·0.34)`; deepens to `brandDeep` |
 | Success | green ✓ replaces bars, brief flash before pop-out | `easeInOut 0.15` on `success`; green `#33C759`-ish |
@@ -126,7 +131,9 @@ Hosted in a **borderless transparent window (no system arrow)**; the card draws 
 | Element | Motion | Spec |
 |---|---|---|
 | Card entrance | scale 0.97→1 (anchor top) + fade | `spring(response: 0.34, damping: 0.82)`, `appear` |
-| Flame | bounce-in scale 0.6→1 | `spring(response: 0.45, damping: 0.55)` |
+| Flame | **living flicker** (licks up from base, sway, pulsing heat-glow) + bounce-in on appear | `AnimatedFlame` — `TimelineView` with mixed sine frequencies; reduced-motion → static flame |
+| Header layout | flame + streak number side by side, "DAY STREAK" caption below | (no encouragement line) |
+| Metrics | aligned 3-col row `WORDS · DAYS · SAVED`, thin dividers, no tinted background | — |
 | Streak number | numeric roll on change | `.contentTransition(.numericText())` |
 | Week dots | **staggered** spring-in, left→right | `spring(0.4, 0.7).delay(0.06 + i·0.04)` |
 | Dismiss | outside-click (global monitor) or status-item re-click | no animation (order-out) |

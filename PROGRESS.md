@@ -3,6 +3,11 @@
 Newest first. One line per meaningful milestone: what, and why it mattered.
 
 ## 2026-09
+- **Polish pass 2** — silence gate (`AudioAnalysis.isLikelySilent`) drops silent clips before
+  transcription, killing the "Thank you." hallucination. Stats card: flame+number header (side
+  by side), removed encouragement line, aligned 3-metric row (words · days · saved, no washed
+  chip), symmetric spacing, dropped the "…"/"≈est". Living animated flame. Docs swept current
+  (CLAUDE.md repo map + status, README, TODOS, streak-and-animations.md). 46/46 tests.
 - **Polish pass 1** — replaced the stats NSPopover with a custom borderless window (no arrow,
   no bg mismatch) + refined it (spring entrance, flame bounce, staggered day dots, numeric
   roll). Moved the speech pill much lower (near the Dock). Added a looping "thinking" wave

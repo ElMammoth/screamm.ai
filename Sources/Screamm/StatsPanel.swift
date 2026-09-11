@@ -107,7 +107,7 @@ struct StatsPanel: View {
             metric(value: isEmpty ? "—" : savedValue, label: "saved")
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 18)
+        .padding(.vertical, 16)
     }
 
     private var divider: some View {
@@ -146,9 +146,9 @@ struct StatsPanel: View {
 
     private var footer: some View {
         VStack(spacing: 0) {
-            Divider().padding(.top, 16)
+            Divider()
             HStack {
-                Button("Dictionary…", action: onEditDictionary)
+                Button("Dictionary", action: onEditDictionary)
                     .buttonStyle(.plain)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(Theme.brand)

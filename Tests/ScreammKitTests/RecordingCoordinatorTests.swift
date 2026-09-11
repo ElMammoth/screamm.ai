@@ -24,8 +24,8 @@ struct RecordingCoordinatorTests {
         func inject(_ text: String) { injected.append(text) }
     }
 
-    // one second of audio = comfortably above the min-duration gate
-    private func oneSecond() -> [Float] { [Float](repeating: 0, count: 16_000) }
+    // one second of NON-silent audio (above the min-duration + silence gates)
+    private func oneSecond() -> [Float] { [Float](repeating: 0.3, count: 16_000) }
 
     private func waitUntilIdle(_ c: RecordingCoordinator) async {
         for _ in 0..<200 where c.state != .idle {
@@ -79,6 +79,18 @@ struct RecordingCoordinatorTests {
         c.handleRelease()
         await waitUntilIdle(c)
         #expect(injector.injected.isEmpty)
+        #expect(c.state == .idle)
+    }
+
+    @Test func silentClipIsDroppedBeforeTranscription() async {
+        let recorder = FakeRecorder()
+        recorder.samples = [Float](repeating: 0, count: 16_000)  // 1s of silence
+        let injector = FakeInjector()
+        let c = RecordingCoordinator(recorder: recorder, transcriber: FakeTranscriber(), injector: injector)
+        c.handlePress()
+        c.handleRelease()
+        await waitUntilIdle(c)
+        #expect(injector.injected.isEmpty)   // never pasted a hallucination
         #expect(c.state == .idle)
     }
 }

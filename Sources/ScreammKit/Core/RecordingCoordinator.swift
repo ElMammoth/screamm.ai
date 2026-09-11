@@ -81,6 +81,13 @@ public final class RecordingCoordinator {
             return
         }
 
+        // Silence gate: drop clips with no speech energy BEFORE transcribing, so Whisper can't
+        // hallucinate "Thank you." on a held-but-silent key.
+        guard !AudioAnalysis.isLikelySilent(samples) else {
+            state = .idle
+            return
+        }
+
         state = .transcribing
         Task { [weak self] in
             await self?.runTranscription(samples)

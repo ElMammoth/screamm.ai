@@ -7,9 +7,20 @@ An open-source alternative to Wispr Flow, powered by [WhisperKit](https://github
 (Whisper `large-v3-turbo` on the Apple Neural Engine). No cloud, no API keys, no accounts,
 no telemetry.
 
-> **Status: v0.1, in progress.** The headless end-to-end loop (hold Right ⌘ → record →
-> transcribe → clean up → paste) is built and tested. Polish (floating pill overlay,
-> settings, onboarding, custom dictionary, per-app context) is v0.2. See `TODOS.md`.
+> **Status: working v0.2** (personal-first; a notarized public release is a later milestone).
+
+## Features
+
+- **Hold to talk, on-device.** Hold Right ⌘, speak, release — cleaned text pastes where your cursor is.
+- **Bottom-center waveform pill** that slides up, shows live audio, and a "thinking" wave while it works.
+- **Streak + stats** (words dictated, days used, estimated time saved) with milestone celebrations —
+  all **local-only**, no accounts, no telemetry.
+- **Friendly first-run onboarding** with in-context permission priming.
+- **Custom dictionary** to fix mistranscriptions (e.g. "screen" → "Screamm").
+- **Silence + hallucination gates** so it never types "Thank you." when you said nothing.
+- Rule-based cleanup (fillers, "new line", capitalization). Auto-detect language.
+
+See `docs/streak-and-animations.md` for the streak logic + animation baseline, and `TODOS.md` for what's next.
 
 ## Requirements
 

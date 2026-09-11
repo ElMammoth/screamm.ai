@@ -1,5 +1,25 @@
 # Screamm.ai — TODOS
 
+## Cleanup before a public release (v1)
+- **Remove the "Preview celebration" dev affordance** — right-click menu item wired in
+  `MenuBarController` + `AppDelegate` (`setPreviewCelebration`). Purely for dogfooding.
+- **Notarization + distribution** — paid Apple Developer ID, notarized DMG, Homebrew cask,
+  Sparkle auto-update. Currently self-signed/personal only (`Scripts/`).
+- Public-facing README polish + a simple landing page.
+
+## Accuracy / engine
+- **Better voice-activity detection** — the current silence gate (`AudioAnalysis.isLikelySilent`,
+  peak+RMS thresholds) catches true silence but not speech-shaped background noise. Consider
+  WhisperKit's `EnergyVAD` or a proper VAD so noisy rooms don't hallucinate either.
+- **Streaming transcription** (v0.3) — show words as you speak; lower felt latency.
+- **Optional local-LLM cleanup** (MLX) — grammar/formatting/tone as an opt-in stage.
+
+## Features
+- **Per-app context** (the signature differentiator) — swap dictionary/cleanup/language by the
+  frontmost app (Xcode → code-mode, French Slack → French). Seam already noted in the design doc.
+- **Settings depth** — model tier switch (turbo/large-v3), hotkey rebind UI, translate-to-English
+  toggle, streak-freeze ("pause & preserve").
+
 ## Deferred (post-v0.1)
 
 ### Idle model unload (memory vs latency)
