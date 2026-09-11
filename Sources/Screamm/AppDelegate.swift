@@ -13,6 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let overlay = OverlayController()
     private let celebration = CelebrationController()
     private let stats = StatsStore()
+    private let dictionaryStore = DictionaryStore()
+    private lazy var settings = SettingsWindowController(store: dictionaryStore)
     private let onboarding = OnboardingWindowController()
     private var coordinator: RecordingCoordinator?
     private var menuBar: MenuBarController?
@@ -29,9 +31,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             recorder: recorder,
             transcriber: transcriber,
             injector: injector,
-            stats: stats
+            stats: stats,
+            dictionary: dictionaryStore
         )
         self.coordinator = coordinator
+        menuBar.setOpenDictionary { [weak self] in self?.settings.show() }
 
         coordinator.onStateChange = { [weak menuBar, overlay] state in
             menuBar?.update(for: state)

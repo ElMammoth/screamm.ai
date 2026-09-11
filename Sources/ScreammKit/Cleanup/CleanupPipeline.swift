@@ -20,12 +20,13 @@ public struct CleanupPipeline {
     /// Deliberately conservative — only unambiguous fillers.
     static let fillers: Set<String> = ["um", "uh", "er", "erm", "hmm", "uhh", "umm"]
 
-    public func process(_ raw: String) -> String {
+    public func process(_ raw: String, dictionary: CustomDictionary = CustomDictionary()) -> String {
         var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.isEmpty { return "" }
         text = stripFillers(text)
         text = applySpokenCommands(text)
         text = fixCapitalizationAndSpacing(text)
+        text = dictionary.apply(to: text)   // final stage: user replacements (proper nouns/jargon)
         return text
     }
 

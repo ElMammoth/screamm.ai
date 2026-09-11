@@ -7,6 +7,7 @@ struct StatsPanel: View {
     let data: StatsData
     var calendar: Calendar = .current
     var onQuit: () -> Void = { NSApp.terminate(nil) }
+    var onEditDictionary: () -> Void = {}
 
     private var isEmpty: Bool { data.totalDictations == 0 }
 
@@ -129,9 +130,10 @@ struct StatsPanel: View {
         VStack(spacing: 0) {
             Divider().padding(.top, 16)
             HStack {
-                Text("All local. Nothing leaves your Mac.")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(.secondary)
+                Button("Dictionary…", action: onEditDictionary)
+                    .buttonStyle(.plain)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Theme.brand)
                 Spacer()
                 Button("Quit", action: onQuit)
                     .buttonStyle(.plain)

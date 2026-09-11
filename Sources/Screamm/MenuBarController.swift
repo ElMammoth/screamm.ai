@@ -16,9 +16,11 @@ final class MenuBarController {
         return p
     }()
     private var previewHandler: (() -> Void)?
+    private var openDictionaryHandler: (() -> Void)?
 
     /// Dev affordance: right-click → "Preview celebration". Wired by AppDelegate.
     func setPreviewCelebration(_ handler: @escaping () -> Void) { previewHandler = handler }
+    func setOpenDictionary(_ handler: @escaping () -> Void) { openDictionaryHandler = handler }
 
     init(stats: StatsStore) {
         self.stats = stats
@@ -96,7 +98,13 @@ final class MenuBarController {
         // Accessory apps must activate or the popover's SwiftUI controls get no events.
         NSApp.activate(ignoringOtherApps: true)
         let host = NSHostingController(
-            rootView: StatsPanel(data: stats.data, onQuit: { NSApp.terminate(nil) }))
+            rootView: StatsPanel(
+                data: stats.data,
+                onQuit: { NSApp.terminate(nil) },
+                onEditDictionary: { [weak self] in
+                    self?.popover.performClose(nil)
+                    self?.openDictionaryHandler?()
+                }))
         // Size the popover to the SwiftUI content — without this the popover can be
         // mis-sized and clip above the top of the screen.
         host.sizingOptions = [.preferredContentSize]
@@ -105,9 +113,16 @@ final class MenuBarController {
     }
 
     @objc private func previewCelebration() { previewHandler?() }
+    @objc private func openDictionary() { openDictionaryHandler?() }
 
     private func showContextMenu() {
         let menu = NSMenu()
+        if openDictionaryHandler != nil {
+            let dict = NSMenuItem(
+                title: "Edit dictionary…", action: #selector(openDictionary), keyEquivalent: "")
+            dict.target = self
+            menu.addItem(dict)
+        }
         if previewHandler != nil {
             let preview = NSMenuItem(
                 title: "Preview celebration", action: #selector(previewCelebration), keyEquivalent: "")

@@ -34,6 +34,7 @@ public final class RecordingCoordinator {
     private let injector: TextInjecting
     private let cleanup: CleanupPipeline
     private let stats: StatsRecording?
+    private let dictionary: DictionaryProviding?
     private let minDurationSeconds: Double
 
     public init(
@@ -42,6 +43,7 @@ public final class RecordingCoordinator {
         injector: TextInjecting,
         cleanup: CleanupPipeline = CleanupPipeline(),
         stats: StatsRecording? = nil,
+        dictionary: DictionaryProviding? = nil,
         minDurationSeconds: Double = 0.35
     ) {
         self.recorder = recorder
@@ -49,6 +51,7 @@ public final class RecordingCoordinator {
         self.injector = injector
         self.cleanup = cleanup
         self.stats = stats
+        self.dictionary = dictionary
         self.minDurationSeconds = minDurationSeconds
     }
 
@@ -87,7 +90,7 @@ public final class RecordingCoordinator {
     private func runTranscription(_ samples: [Float]) async {
         do {
             let raw = try await transcriber.transcribe(samples)
-            let cleaned = cleanup.process(raw)
+            let cleaned = cleanup.process(raw, dictionary: dictionary?.dictionary ?? CustomDictionary())
 
             // Suppress empty / hallucinated-on-silence output — never paste noise.
             guard !cleaned.isEmpty else {

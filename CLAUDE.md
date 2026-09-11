@@ -22,7 +22,11 @@ later). Repo: https://github.com/ElMammoth/screamm.ai
   4-card onboarding + two-step model download w/ progress + activation flip (P2); tiered
   milestone confetti/badge celebrations (P3). Plan: `docs/onboarding-stats-plan.md`.
   Note: a right-click "Preview celebration" dev affordance exists (remove before v1).
-- **NEXT:** custom dictionary (fixes "Screamm"→"screen") — the last big v0.2 accuracy win.
+- **Custom dictionary: DONE.** User-editable replacements (final cleanup stage) + settings
+  window; fixes "screen"→"Screamm". `Sources/ScreammKit/Dictionary/`.
+- **v0.2 feature set is essentially complete.** Possible next: per-app context (the signature
+  differentiator from the design doc), streaming transcription, or polish/QA + a public
+  release (notarization + Homebrew). Also: remove the "Preview celebration" dev affordance.
 - Deferred items: `TODOS.md`. Roadmap detail: the design doc (see "Where docs live").
 
 ## Repo map

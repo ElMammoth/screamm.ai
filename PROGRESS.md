@@ -3,6 +3,11 @@
 Newest first. One line per meaningful milestone: what, and why it mattered.
 
 ## 2026-09
+- **Custom dictionary** — user-editable replacements applied as the final cleanup stage
+  (whole-word/phrase, case-insensitive, boundary-safe so "screenshot" survives a "screen"
+  rule). `DictionaryStore` (local JSON, atomic write, corrupt-backup) + a settings window
+  (menu popover "Dictionary…" / right-click "Edit dictionary…"). Fixes "screen"→"Screamm".
+  40/40 tests.
 - **Onboarding/stats Phase 3** — tiered milestone celebrations: confetti burst + badge in a
   separate `.nonactivatingPanel` near the pill (click-through, never steals focus),
   auto-dismiss, reduced-motion → static badge. Suppressed during onboarding. Right-click
