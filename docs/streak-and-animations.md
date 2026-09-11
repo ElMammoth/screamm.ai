@@ -165,13 +165,36 @@ Tiered: the per-success green ✓ (2.1) fires every time; confetti only on the b
 | Warming-up | real download `ProgressView(value:)` or indeterminate spinner | from `LoadState.downloading` |
 | Reduced motion | card transitions disabled | `@Environment(\.accessibilityReduceMotion)` |
 
-### 2.5 Menu bar (`MenuBarController.swift`)
+### 2.5 Screammy the mascot (`Overlay/Screammy.swift`)
+
+The orange squid who sits on the pill and hooks his tentacles around both ends. Drawn entirely in
+**one `Canvas`** (a single draw pass, no view-tree diffing) and ticked by
+`TimelineView(.periodic(by: 1/30))` rather than display rate, because he animates while Whisper
+decodes on the ANE. Measured cost: **0.065 ms/frame, 0.19% of one core**.
+
+| Element | Motion | Spec |
+|---|---|---|
+| Tentacle sway | 6 limbs, each on its own sine phase | `amp · sin(t·1.7 + phase)` |
+| Sway amplitude | idle 2.0 · listening `2.2 + level·5` · thinking 3.0 · success 4.0 | live mic level drives the pulse |
+| Head bob | slow rise/fall; lifts 3.5pt on success | `sin(t·0.9)` (`·1.15` while thinking) |
+| Blink | quick close/open every 3.6s | eye height scales to 0.10 for ~0.13s |
+| Gaze | up while thinking, up-left otherwise | pupil offset within the eye |
+| Eyebrows | lift + tilt while thinking | clamped so they stay inside the head |
+| Success | happy squint (arcs replace the eyes) | paired with the pill's green ✓ |
+| Reduced motion | a distinct STATIC pose per mood — never one frozen frame | `animated: false`, fixed `staticPose` |
+
+He only exists while the pill does (during dictation), and the panel is ordered out when idle, so
+there is no background cost. Two hard constraints, both load-bearing: the deep `outline` contour
+(orange-on-orange is invisible without it) and limbs that stop at the pill's top rim (lower covers
+the waveform and the ✓).
+
+### 2.6 Menu bar (`MenuBarController.swift`)
 
 No continuous animation. The status item swaps SF Symbols by state (idle → `flame.fill` +
 streak number / `mic.fill`; recording → `mic.fill`; transcribing → `waveform`; injecting →
 `checkmark`), template-tinted, monospaced-digit number (no width jitter).
 
-### 2.6 Settings / dictionary window
+### 2.7 Settings / dictionary window
 
 No notable animation (standard titled window, text fields).
 

@@ -5,7 +5,6 @@ import ScreammKit
 /// card (hosted in a borderless transparent window — no system arrow), with a spring entrance.
 struct StatsPanel: View {
     let data: StatsData
-    var profile: Profile = Profile()
     var calendar: Calendar = .current
     var onQuit: () -> Void = { NSApp.terminate(nil) }
     var onOpenSettings: () -> Void = {}
@@ -48,8 +47,8 @@ struct StatsPanel: View {
             }
             .scaleEffect(appear || reduceMotion ? 1 : 0.7)
             .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.6), value: appear)
-            // "ALEX'S DAY STREAK" / "DAY STREAK" — never a dangling possessive.
-            Text(isEmpty ? "Start your streak" : "\(profile.possessive) day streak")
+            // Deliberately NOT personalized: it's your Mac, you know whose streak it is.
+            Text(isEmpty ? "Start your streak" : "day streak")
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.9))
                 .textCase(.uppercase)

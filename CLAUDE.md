@@ -13,7 +13,8 @@ later). Repo: https://github.com/ElMammoth/screamm.ai
 
 ## Current status (keep this current)
 
-Working v0.3, on-device, dogfooded live. Everything below is DONE and on `main`:
+Working v0.4, on-device, dogfooded live. Everything below is DONE and on `main`.
+**Three reported bugs are open — see the top of `TODOS.md` before adding features.**
 
 - **v0.1 core loop:** Right ⌘ hold → record → WhisperKit turbo → rule cleanup → clipboard+⌘V
   paste. M2 Pro: 1.83s warm decode. Min-duration + **silence gate** (`AudioAnalysis.isLikelySilent`
@@ -38,20 +39,25 @@ Working v0.3, on-device, dogfooded live. Everything below is DONE and on `main`:
   lists. Auto-detect needs **consecutive ordinals starting at "first"**, each with real content
   (so "I was first and she was second" stays prose); explicit "numbered/bullet list",
   "new bullet"/"next item", "end list" also work. Runs after capitalization, before dictionary.
-- **v0.3 — profile/name:** `ScreammKit/Profile/` (`Profile` + `ProfileStore`). Asked in
-  onboarding (skippable), editable in the "You" settings tab. **All personalized copy goes
-  through `profile.possessive` / `profile.addressed(_:)`** so a missing name degrades to
-  "Your day streak" / "Nice work!" — never a dangling name or comma.
+- **v0.3 — profile/name:** `ScreammKit/Profile/` (`Profile` + `ProfileStore`). Asked once during
+  onboarding (skippable) and **only used in the celebration line** ("Nice work, Alex"). It is
+  deliberately NOT in the stats card or settings: on your own Mac "Cyprien's day streak" reads
+  oddly, since you already know whose streak it is. Any new personalized copy must go through
+  `profile.possessive` / `profile.addressed(_:)`, which degrade to "Your…" / "Nice work!".
 - **v0.3 — cleanup:** removed the "Preview celebration" dev affordance; the right-click menu is
-  now just Settings + Quit, and the stats-card footer button says "Settings" (3 tabs now).
+  now just Settings + Quit, and the stats-card footer button says "Settings".
+- **v0.4 — Screammy the squid: DONE.** `Overlay/Screammy.swift`. Orange squid with a teal
+  handlebar moustache who sits on the pill and hooks his tentacles around both ends. Moods map to
+  state (listening / thinking / success). Present only during dictation, since he lives on the
+  pill. Built from the user's own reference art (`ref_image_mascot.jpg`). Measured at
+  **0.065 ms/frame, 0.19% of one core at 30fps** — it runs alongside ANE decode, so this was a
+  gate, not a nicety.
 
 **Baselines / plans:** `docs/streak-and-animations.md` (streak logic + full animation
 inventory), `docs/onboarding-stats-plan.md` (design + eng reviewed). Deferred: `TODOS.md`.
 
-**Next: v0.4 = Screammy the squid** — a native SwiftUI mascot sitting on the pill with its
-tentacles wrapping it, present only during dictation. **Gated** on `/plan-eng-review` (pill-panel
-resize/anchor + a "must not regress ~1.83s warm decode" budget) and `/plan-design-review`. Spec
-is in the v0.3 design doc under "(v0.4, DEFERRED)".
+**Next:** fix the three open bugs in `TODOS.md` (spoken lists not firing on real speech, VS Code
+terminal code-mode, settings UX). Then: notarization + public release.
 
 ## Repo map
 
@@ -80,10 +86,11 @@ Sources/
     StatsWindowController.swift  # arrow-less borderless window that hosts the card
     SystemContextResolver.swift  # frontmost-app → CleanupMode (NSWorkspace)
     Overlay/                  # Theme.swift, WaveformView.swift, OverlayController.swift (pill),
-                              #   AnimatedFlame.swift, CelebrationView.swift + CelebrationController.swift
+                              #   Screammy.swift (the mascot, one Canvas), AnimatedFlame.swift,
+                              #   CelebrationView.swift + CelebrationController.swift
     Onboarding/               # OnboardingModel/View/WindowController.swift (5-card first run)
-    Settings/                 # SettingsView (3 tabs) + DictionarySettingsView + CodeModeSettingsView
-                              #   + ProfileSettingsView ("You") + SettingsWindowController.swift
+    Settings/                 # SettingsView (2 tabs) + DictionarySettingsView
+                              #   + CodeModeSettingsView + SettingsWindowController.swift
   ScreammSpike/               # throwaway engine spike (latency gate) — delete eventually
 Tests/ScreammKitTests/        # Swift Testing suite (Cleanup, SpokenList, Coordinator, Stats,
                               #   Dictionary, Context, Profile, Audio) — 74 tests
@@ -127,6 +134,15 @@ pkill -x Screamm 2>/dev/null; open Screamm.app # relaunch
   handle it: min-duration, the **silence gate** (`AudioAnalysis.isLikelySilent` drops clips with
   no speech energy BEFORE transcribing — peak<0.02 AND rms<0.008), and empty/low-confidence
   suppression after cleanup. If a specific mic still leaks, tune the thresholds in `AudioAnalysis`.
+- **The mascot and the pill share a hue.** The reference art puts an orange squid on a PALE pill;
+  ours sits on the brand-orange pill, so without the deep `Screammy.outline` contour the tentacles
+  are literally invisible against it. Don't "simplify" that outline away. Same reason the limbs
+  stop at the pill's top rim: anything lower covers the waveform bars and the success ✓.
+- **Panel growth must be top-only.** `WaveformView` reserves Screammy's head room with
+  `.padding(.top, 30 + Screammy.Metrics.headSpace(...))` while bottom padding stays 30, and the
+  panel is positioned by its BOTTOM edge. That's what keeps the pill from moving when he appears.
+  `headSpace` depends only on the pill HEIGHT (a constant), which is why it can be reserved before
+  the pill is ever measured.
 - **Repo hygiene:** `$HOME` is itself a git repo on this machine. This project has its own
   `.git` — always run git commands from the project dir.
 

@@ -10,15 +10,13 @@ final class MenuBarController {
 
     private let statusItem: NSStatusItem
     private let stats: StatsStore
-    private let profileStore: ProfileStore
     private let statsWindow = StatsWindowController()
     private var openDictionaryHandler: (() -> Void)?
 
     func setOpenDictionary(_ handler: @escaping () -> Void) { openDictionaryHandler = handler }
 
-    init(stats: StatsStore, profileStore: ProfileStore) {
+    init(stats: StatsStore) {
         self.stats = stats
-        self.profileStore = profileStore
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
             button.action = #selector(handleClick)
@@ -88,7 +86,6 @@ final class MenuBarController {
         guard let button = statusItem.button else { return }
         statsWindow.toggle(relativeTo: button, view: NSHostingView(rootView: StatsPanel(
             data: stats.data,
-            profile: profileStore.profile,
             onQuit: { NSApp.terminate(nil) },
             onOpenSettings: { [weak self] in
                 self?.statsWindow.close()

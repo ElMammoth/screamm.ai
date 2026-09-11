@@ -18,7 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let profileStore = ProfileStore()
     private lazy var contextResolver = SystemContextResolver(store: contextStore)
     private lazy var settings = SettingsWindowController(
-        dictionaryStore: dictionaryStore, contextStore: contextStore, profileStore: profileStore)
+        dictionaryStore: dictionaryStore, contextStore: contextStore)
     private let onboarding = OnboardingWindowController()
     private var coordinator: RecordingCoordinator?
     private var menuBar: MenuBarController?
@@ -27,7 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private static let onboardingKey = "onboardingCompleted"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let menuBar = MenuBarController(stats: stats, profileStore: profileStore)
+        let menuBar = MenuBarController(stats: stats)
         self.menuBar = menuBar
 
         let coordinator = RecordingCoordinator(
@@ -40,8 +40,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.coordinator = coordinator
         menuBar.setOpenDictionary { [weak self] in self?.settings.show() }
-        // A name change in Settings should show up in the stats card immediately.
-        settings.onProfileChanged = { [weak menuBar] in menuBar?.refreshStreak() }
 
         coordinator.onStateChange = { [weak menuBar, overlay] state in
             menuBar?.update(for: state)

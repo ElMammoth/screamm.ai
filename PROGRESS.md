@@ -3,6 +3,15 @@
 Newest first. One line per meaningful milestone: what, and why it mattered.
 
 ## 2026-09
+- **v0.4 — Screammy.** The orange squid from the reference art now sits on the waveform pill and
+  hooks his tentacles around both ends while you dictate. Native SwiftUI, no art assets: one
+  `Canvas`, ~14 shapes, six tentacles on independent sine phases, blink, gaze, eyebrows, teal
+  handlebar moustache. Moods follow the recording state (listening / thinking / success). Two
+  non-obvious constraints drove the design — a deep contour, because an orange squid on an orange
+  pill is otherwise invisible, and limbs that stop at the pill's top rim, because anything lower
+  covers the waveform and the success ✓. Perf was a gate, not a nicety (he animates while Whisper
+  decodes): **0.065 ms/frame, 0.19% of one core at 30fps**. Pulled name personalization back out
+  of the stats card at the same time. 74/74 tests.
 - **v0.3 — spoken lists + your name.** Two shipped features. (1) `SpokenListFormatter`: say a
   list, get a list. "First, buy milk. Second, call mom." → a real numbered list; explicit
   "bullet list"/"new bullet"/"end list" commands too. Deliberately conservative — needs
@@ -56,10 +65,11 @@ Newest first. One line per meaningful milestone: what, and why it mattered.
   `~/.gstack/projects/screamm.ai/`.
 
 ## Next up
-1. **v0.4 — Screammy the squid.** Native SwiftUI mascot on top of the pill, tentacles wrapping
-   it. Gated on `/plan-eng-review` (panel resize/anchor + a "must not regress ~1.83s warm
-   decode" budget) and `/plan-design-review` on the visual.
-2. Continued pill/popover polish.
+Three bugs found while dogfooding, detailed at the top of `TODOS.md`:
+1. Spoken lists don't fire on real speech (English or French) — instrument the real transcript
+   before guessing; then add counting + non-English ordinals.
+2. Per-app code mode misses the VS Code integrated terminal.
+3. The settings window needs a real UX pass.
 
 ## Later / deferred
 See `TODOS.md` and the roadmap in `DESIGN.md`.

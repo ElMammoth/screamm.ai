@@ -1,5 +1,28 @@
 # Screamm.ai — TODOS
 
+## Reported broken (dogfooding, 2026-09-11) — fix next
+
+- **Spoken lists don't fire in the real app, English OR French.** `SpokenListFormatter` passes its
+  unit tests, so the bug is between real Whisper output and the formatter — not in the formatter's
+  logic. Prime suspects, in order: (1) **auto-detect only knows English ordinals** (`first…tenth`),
+  so French ("premièrement, deuxièmement") can never match — a known gap, not a bug; (2) real
+  speech probably uses **counting** ("one, two, three" / "un, deux, trois"), which the design doc
+  specified and the implementation never covered; (3) the transcript may not look like the test
+  fixtures at all. **Do this first: log the raw transcript and the post-cleanup text for a real
+  dictation** and compare — do not guess. Then add counting + French/multilingual ordinals.
+- **Per-app code mode doesn't trigger for the VS Code integrated terminal.** Dictating there still
+  capitalizes and punctuates. The frontmost app is captured at key-press in `RecordingCoordinator`
+  and resolved by `SystemContextResolver` (NSWorkspace bundle id). Verify what bundle id is
+  actually seen when VS Code is focused (`com.microsoft.VSCode` vs Cursor/Insiders/Codium builds)
+  and whether the press-time capture is racing the overlay/panel taking focus. Log the resolved
+  id + mode per dictation.
+- **The settings window is not user-friendly.** Two bare tabs of raw tables. Needs a real pass:
+  clear section headers, explanatory copy, sensible empty states, and a visible way to reach it.
+  Do a `/plan-design-review` + Mobbin pass on settings for a utility app before rebuilding it.
+- **Name personalization was pulled back** (2026-09-11): "Cyprien's day streak" reads oddly on
+  your own machine — you already know whose streak it is. The name is now asked at onboarding
+  only and used just in the celebration line. Revisit only if there's a use that earns it.
+
 ## Next up
 - **v0.4 — Screammy the squid.** Native SwiftUI mascot sitting on top of the waveform pill,
   tentacles wrapping it; moods idle/listening/thinking/success; present only during dictation.
