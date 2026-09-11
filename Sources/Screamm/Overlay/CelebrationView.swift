@@ -4,6 +4,7 @@ import ScreammKit
 /// A short confetti burst + a badge for a milestone. Reduced-motion → static badge, no confetti.
 struct CelebrationView: View {
     let milestone: Milestone
+    var profile: Profile = Profile()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appear = false
 
@@ -31,12 +32,18 @@ struct CelebrationView: View {
                 .frame(width: 66, height: 66)
                 .background(Circle().fill(Theme.brand)
                     .shadow(color: Theme.brand.opacity(0.5), radius: 12, y: 3))
-            Text(title)
-                .font(.system(size: 18, weight: .heavy, design: .rounded))
-                .foregroundStyle(.primary)
-                .padding(.horizontal, 16).padding(.vertical, 8)
-                .background(Capsule().fill(Color(nsColor: .windowBackgroundColor))
-                    .shadow(color: .black.opacity(0.18), radius: 10, y: 3))
+            VStack(spacing: 3) {
+                Text(title)
+                    .font(.system(size: 18, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.primary)
+                // "Nice work, Alex" / "Nice work!" — nil-safe, never a dangling comma.
+                Text(profile.addressed("Nice work"))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 18).padding(.vertical, 9)
+            .background(Capsule().fill(Color(nsColor: .windowBackgroundColor))
+                .shadow(color: .black.opacity(0.18), radius: 10, y: 3))
         }
     }
 

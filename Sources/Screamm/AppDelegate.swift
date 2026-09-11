@@ -15,9 +15,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let stats = StatsStore()
     private let dictionaryStore = DictionaryStore()
     private let contextStore = AppContextStore()
+    private let profileStore = ProfileStore()
     private lazy var contextResolver = SystemContextResolver(store: contextStore)
     private lazy var settings = SettingsWindowController(
-        dictionaryStore: dictionaryStore, contextStore: contextStore)
+        dictionaryStore: dictionaryStore, contextStore: contextStore, profileStore: profileStore)
     private let onboarding = OnboardingWindowController()
     private var coordinator: RecordingCoordinator?
     private var menuBar: MenuBarController?
@@ -26,9 +27,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private static let onboardingKey = "onboardingCompleted"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let menuBar = MenuBarController(stats: stats)
+        let menuBar = MenuBarController(stats: stats, profileStore: profileStore)
         self.menuBar = menuBar
-        menuBar.setPreviewCelebration { [weak self] in self?.celebration.celebrate(.words1k) }
 
         let coordinator = RecordingCoordinator(
             recorder: recorder,
@@ -40,6 +40,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.coordinator = coordinator
         menuBar.setOpenDictionary { [weak self] in self?.settings.show() }
+        // A name change in Settings should show up in the stats card immediately.
+        settings.onProfileChanged = { [weak menuBar] in menuBar?.refreshStreak() }
 
         coordinator.onStateChange = { [weak menuBar, overlay] state in
             menuBar?.update(for: state)
@@ -64,7 +66,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSLog("Screamm milestone reached: \(milestone.rawValue)")
             // During onboarding, card 4 owns the celebration (no triple-fire).
             guard self?.onboardingActive != true else { return }
-            self?.celebration.celebrate(milestone)
+            guard let self else { return }
+            self.celebration.celebrate(milestone, profile: self.profileStore.profile)
         }
 
         // Model load state → menu bar + onboarding card 4.
@@ -89,6 +92,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stats.flush()
         dictionaryStore.flush()
         contextStore.flush()
+        profileStore.flush()
     }
 
     // MARK: - First run
@@ -97,6 +101,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         onboardingActive = true
         onboarding.model.onKickoffLoad = { [weak self] in
             Task { await self?.transcriber.load() }
+        }
+        onboarding.model.onSaveName = { [weak self] name in
+            self?.profileStore.update(Profile(name: Profile(name: name).displayName))
         }
         onboarding.onFinished = { [weak self] in self?.completeOnboarding() }
         onboarding.show()

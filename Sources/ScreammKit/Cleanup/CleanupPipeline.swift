@@ -35,6 +35,7 @@ public struct CleanupPipeline {
         text = stripFillers(text)
         text = applySpokenCommands(text)
         text = fixCapitalizationAndSpacing(text, capitalizeSentences: mode == .prose)
+        text = SpokenListFormatter().format(text, capitalizeItems: mode == .prose)
         text = dictionary.apply(to: text)   // final stage: user replacements (proper nouns/jargon)
         return text
     }

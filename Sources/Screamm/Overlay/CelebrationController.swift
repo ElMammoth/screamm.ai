@@ -10,10 +10,10 @@ final class CelebrationController {
 
     private var panel: NSPanel?
 
-    func celebrate(_ milestone: Milestone) {
+    func celebrate(_ milestone: Milestone, profile: Profile = Profile()) {
         panel?.orderOut(nil)
 
-        let host = NSHostingView(rootView: CelebrationView(milestone: milestone))
+        let host = NSHostingView(rootView: CelebrationView(milestone: milestone, profile: profile))
         host.frame = NSRect(x: 0, y: 0, width: 320, height: 220)
 
         let panel = NSPanel(

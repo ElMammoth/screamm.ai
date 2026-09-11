@@ -4,6 +4,7 @@ import ScreammKit
 struct OnboardingView: View {
     @ObservedObject var model: OnboardingModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @FocusState private var nameFocused: Bool
 
     private let axTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -42,6 +43,7 @@ struct OnboardingView: View {
     @ViewBuilder private var content: some View {
         switch model.card {
         case .welcome:       welcomeCard
+        case .name:          nameCard
         case .mic:           micCard
         case .accessibility: axCard
         case .tryIt:         tryCard
@@ -65,6 +67,40 @@ struct OnboardingView: View {
                 model.advance()
             }
         }
+    }
+
+    /// Name beat. Structure follows the pattern every app that does this well uses (Flo, YNAB,
+    /// Dot, Bevel): the QUESTION is the headline, one generous field, and a sub-line that says
+    /// why we're asking. Ours doubles as the privacy promise. Fully skippable.
+    private var nameCard: some View {
+        VStack(spacing: 18) {
+            Text("What should we call you?")
+                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .multilineTextAlignment(.center)
+
+            Text("Just a first name, so Screamm can cheer you on properly.\nIt never leaves this Mac.")
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            TextField("e.g. Alex", text: $model.name)
+                .textFieldStyle(.plain)
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .focused($nameFocused)
+                .padding(.vertical, 14).padding(.horizontal, 18)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.primary.opacity(0.06)))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(nameFocused ? Theme.brand.opacity(0.7) : .clear, lineWidth: 2))
+                .frame(maxWidth: 300)
+                .onSubmit { model.advance() }
+
+            // One button, two meanings — skipping costs the same click as continuing.
+            primaryButton(model.trimmedName == nil ? "Skip for now" : "Continue") { model.advance() }
+        }
+        .onAppear { nameFocused = true }
     }
 
     private var micCard: some View {
@@ -108,8 +144,11 @@ struct OnboardingView: View {
         VStack(spacing: 22) {
             if model.didDictate {
                 circle(symbol: "checkmark", tint: Color(red: 0.2, green: 0.78, blue: 0.35))
-                Text("Nice! You're all set.")
+                Text(Profile(name: model.trimmedName).addressed("Nice work"))
                     .font(.system(size: 24, weight: .heavy, design: .rounded))
+                Text("You're all set.")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.secondary)
             } else if model.modelReady {
                 pill
                 (Text("Hold ") + Text("Right ⌘").foregroundColor(Theme.brandDeep) + Text(" and say anything"))

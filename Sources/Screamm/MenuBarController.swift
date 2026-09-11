@@ -10,16 +10,15 @@ final class MenuBarController {
 
     private let statusItem: NSStatusItem
     private let stats: StatsStore
+    private let profileStore: ProfileStore
     private let statsWindow = StatsWindowController()
-    private var previewHandler: (() -> Void)?
     private var openDictionaryHandler: (() -> Void)?
 
-    /// Dev affordance: right-click → "Preview celebration". Wired by AppDelegate.
-    func setPreviewCelebration(_ handler: @escaping () -> Void) { previewHandler = handler }
     func setOpenDictionary(_ handler: @escaping () -> Void) { openDictionaryHandler = handler }
 
-    init(stats: StatsStore) {
+    init(stats: StatsStore, profileStore: ProfileStore) {
         self.stats = stats
+        self.profileStore = profileStore
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
             button.action = #selector(handleClick)
@@ -89,29 +88,23 @@ final class MenuBarController {
         guard let button = statusItem.button else { return }
         statsWindow.toggle(relativeTo: button, view: NSHostingView(rootView: StatsPanel(
             data: stats.data,
+            profile: profileStore.profile,
             onQuit: { NSApp.terminate(nil) },
-            onEditDictionary: { [weak self] in
+            onOpenSettings: { [weak self] in
                 self?.statsWindow.close()
                 self?.openDictionaryHandler?()
             })))
     }
 
-    @objc private func previewCelebration() { previewHandler?() }
-    @objc private func openDictionary() { openDictionaryHandler?() }
+    @objc private func openSettings() { openDictionaryHandler?() }
 
     private func showContextMenu() {
         let menu = NSMenu()
         if openDictionaryHandler != nil {
-            let dict = NSMenuItem(
-                title: "Edit dictionary", action: #selector(openDictionary), keyEquivalent: "")
-            dict.target = self
-            menu.addItem(dict)
-        }
-        if previewHandler != nil {
-            let preview = NSMenuItem(
-                title: "Preview celebration", action: #selector(previewCelebration), keyEquivalent: "")
-            preview.target = self
-            menu.addItem(preview)
+            let settings = NSMenuItem(
+                title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
+            settings.target = self
+            menu.addItem(settings)
             menu.addItem(.separator())
         }
         let quit = NSMenuItem(

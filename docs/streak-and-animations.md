@@ -80,12 +80,12 @@ Checked after each record, **highest priority first**, each firing exactly once 
 
 `record` returns the single highest-priority **newly** reached milestone (while marking all
 newly reached), which `RecordingCoordinator.onMilestone` forwards to the celebration (see 2.3).
-During onboarding, card 4 owns the moment and milestone celebrations are suppressed.
+During onboarding, the try-it card owns the moment and milestone celebrations are suppressed.
 
 ### 1.5 Time saved (estimate)
 
 `timeSavedMinutes = totalWords × (1/40 − 1/150)` — typing ~40 wpm vs speaking ~150 wpm. Always
-shown labeled `~est`. Displayed as hours (≥60 min) or minutes.
+shown with a leading `~` (approximate). Displayed as hours (≥60 min) or minutes.
 
 ### 1.6 Persistence & safety
 
@@ -149,6 +149,7 @@ Separate `.nonactivatingPanel` (never steals typing focus), bottom-center at
 |---|---|---|
 | Confetti | 70 particles, burst up/out + gravity, fade over 1.7s | `Canvas` + `TimelineView(.animation)`, `y = vy·t + 320·t²` |
 | Badge | spring scale 0.6→1 + fade | `spring(response: 0.4, damping: 0.6)` |
+| Badge subtitle | none (static) | `profile.addressed("Nice work")` → "Nice work, Alex" / "Nice work!" |
 | Reduced motion | **no confetti**, static badge only | — |
 
 Tiered: the per-success green ✓ (2.1) fires every time; confetti only on the big milestones (2.4).
@@ -157,9 +158,10 @@ Tiered: the per-success green ✓ (2.1) fires every time; confetti only on the b
 
 | Element | Motion | Spec |
 |---|---|---|
-| Card transitions | spring between the 4 cards | `spring(response: 0.35, damping: 0.82)` on `model.card` |
+| Card transitions | spring between the 5 cards | `spring(response: 0.35, damping: 0.82)` on `model.card` |
 | Progress bar | width grows per card | animated via the card spring |
 | Permission ✓ | circle swaps to a green check | state-driven |
+| Name field focus | border fades to brand orange on focus | `@FocusState`, `strokeBorder` |
 | Warming-up | real download `ProgressView(value:)` or indeterminate spinner | from `LoadState.downloading` |
 | Reduced motion | card transitions disabled | `@Environment(\.accessibilityReduceMotion)` |
 

@@ -13,7 +13,7 @@ later). Repo: https://github.com/ElMammoth/screamm.ai
 
 ## Current status (keep this current)
 
-Working v0.2, on-device, dogfooded live. Everything below is DONE and on `main`:
+Working v0.3, on-device, dogfooded live. Everything below is DONE and on `main`:
 
 - **v0.1 core loop:** Right ⌘ hold → record → WhisperKit turbo → rule cleanup → clipboard+⌘V
   paste. M2 Pro: 1.83s warm decode. Min-duration + **silence gate** (`AudioAnalysis.isLikelySilent`
@@ -23,9 +23,10 @@ Working v0.2, on-device, dogfooded live. Everything below is DONE and on `main`:
   bars while recording; a **looping "thinking" wave** while transcribing (never freezes); green
   ✓ on success. `Screamm/Overlay/`.
 - **Stable signing cert:** permissions persist across rebuilds (`Scripts/make-cert.sh`).
-- **Onboarding/stats (Phases 1-3):** StatsStore (streak/milestones/persistence) + stats card +
-  success micro-reward; 4-card onboarding (permission priming, two-step model download w/ real
-  progress, `.regular`↔`.accessory` flip); tiered milestone confetti/badge celebrations.
+- **Onboarding/stats:** StatsStore (streak/milestones/persistence) + stats card + success
+  micro-reward; 5-card onboarding — welcome → **name** → mic → accessibility → try-it
+  (permission priming, two-step model download w/ real progress, `.regular`↔`.accessory`
+  flip); tiered milestone confetti/badge celebrations.
 - **Custom dictionary:** user-editable replacements as the final cleanup stage + settings
   window; fixes "screen"→"Screamm". `ScreammKit/Dictionary/`.
 - **Per-app context (code mode):** dictating into a dev app (Xcode/VS Code/Terminal/Cursor/…)
@@ -33,13 +34,24 @@ Working v0.2, on-device, dogfooded live. Everything below is DONE and on `main`:
   settings toggle + editable app list. `ScreammKit/Context/` + `Screamm/SystemContextResolver.swift`.
 - **Stats card polish:** arrow-less custom borderless window (no bg mismatch), living flame,
   flame+number header, aligned 3-metric row (words · days · saved).
+- **v0.3 — spoken lists:** `Cleanup/SpokenListFormatter.swift` turns spoken structure into real
+  lists. Auto-detect needs **consecutive ordinals starting at "first"**, each with real content
+  (so "I was first and she was second" stays prose); explicit "numbered/bullet list",
+  "new bullet"/"next item", "end list" also work. Runs after capitalization, before dictionary.
+- **v0.3 — profile/name:** `ScreammKit/Profile/` (`Profile` + `ProfileStore`). Asked in
+  onboarding (skippable), editable in the "You" settings tab. **All personalized copy goes
+  through `profile.possessive` / `profile.addressed(_:)`** so a missing name degrades to
+  "Your day streak" / "Nice work!" — never a dangling name or comma.
+- **v0.3 — cleanup:** removed the "Preview celebration" dev affordance; the right-click menu is
+  now just Settings + Quit, and the stats-card footer button says "Settings" (3 tabs now).
 
 **Baselines / plans:** `docs/streak-and-animations.md` (streak logic + full animation
 inventory), `docs/onboarding-stats-plan.md` (design + eng reviewed). Deferred: `TODOS.md`.
 
-**Likely next:** per-app context (signature differentiator), streaming transcription, or a QA
-pass + public release (notarization + Homebrew). Also: remove the "Preview celebration"
-right-click dev affordance before v1.
+**Next: v0.4 = Screammy the squid** — a native SwiftUI mascot sitting on the pill with its
+tentacles wrapping it, present only during dictation. **Gated** on `/plan-eng-review` (pill-panel
+resize/anchor + a "must not regress ~1.83s warm decode" budget) and `/plan-design-review`. Spec
+is in the v0.3 design doc under "(v0.4, DEFERRED)".
 
 ## Repo map
 
@@ -54,8 +66,10 @@ Sources/
                               #   AudioAnalysis.swift (isLikelySilent — silence gate)
     Transcription/            # WhisperKitTranscriber.swift (LoadState, two-step download, warm-up)
     Cleanup/                  # CleanupPipeline.swift (fillers, spoken commands, caps, + dictionary)
+                              #   + SpokenListFormatter.swift (spoken structure → real lists)
     Dictionary/               # CustomDictionary.swift (replacements) + DictionaryStore.swift
     Context/                  # AppContext.swift (per-app CleanupMode) + AppContextStore.swift
+    Profile/                  # Profile.swift (name + nil-safe copy helpers) + ProfileStore
     Stats/                    # Stats.swift (StatsData: streak/milestones) + StatsStore.swift
     Injection/                # ClipboardInjector.swift (paste+restore, secure-input guard)
     Hotkey/                   # HotkeyManager.swift (NSEvent .flagsChanged + lost-release watchdog)
@@ -67,11 +81,12 @@ Sources/
     SystemContextResolver.swift  # frontmost-app → CleanupMode (NSWorkspace)
     Overlay/                  # Theme.swift, WaveformView.swift, OverlayController.swift (pill),
                               #   AnimatedFlame.swift, CelebrationView.swift + CelebrationController.swift
-    Onboarding/               # OnboardingModel/View/WindowController.swift (4-card first run)
-    Settings/                 # SettingsView (tabs) + DictionarySettingsView + CodeModeSettingsView
-                              #   + SettingsWindowController.swift
+    Onboarding/               # OnboardingModel/View/WindowController.swift (5-card first run)
+    Settings/                 # SettingsView (3 tabs) + DictionarySettingsView + CodeModeSettingsView
+                              #   + ProfileSettingsView ("You") + SettingsWindowController.swift
   ScreammSpike/               # throwaway engine spike (latency gate) — delete eventually
-Tests/ScreammKitTests/        # Swift Testing suite (Cleanup, Coordinator, Stats, Dictionary, Audio)
+Tests/ScreammKitTests/        # Swift Testing suite (Cleanup, SpokenList, Coordinator, Stats,
+                              #   Dictionary, Context, Profile, Audio) — 74 tests
 Scripts/                      # make-cert.sh (self-signed cert), build-app.sh (build+sign .app)
 Resources/                    # Info.plist (LSUIElement, mic usage), Screamm.entitlements (no sandbox)
 docs/                         # onboarding-stats-plan.md, streak-and-animations.md

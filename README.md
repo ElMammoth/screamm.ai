@@ -7,14 +7,19 @@ An open-source alternative to Wispr Flow, powered by [WhisperKit](https://github
 (Whisper `large-v3-turbo` on the Apple Neural Engine). No cloud, no API keys, no accounts,
 no telemetry.
 
-> **Status: working v0.2** (personal-first; a notarized public release is a later milestone).
+> **Status: working v0.3** (personal-first; a notarized public release is a later milestone).
 
 ## Features
 
 - **Hold to talk, on-device.** Hold Right ⌘, speak, release — cleaned text pastes where your cursor is.
+- **Say a list, get a list.** "First, buy milk. Second, call mom. Third, ship it." pastes as a real
+  numbered list. Or say "bullet list" / "new bullet" / "end list" explicitly. Conservative on
+  purpose — "first, I went to the store" stays prose.
 - **Bottom-center waveform pill** that slides up, shows live audio, and a "thinking" wave while it works.
 - **Streak + stats** (words dictated, days used, estimated time saved) with milestone celebrations —
   all **local-only**, no accounts, no telemetry.
+- **Knows your first name** (optional, skippable) so the streak and celebrations feel like yours.
+  Stored on your Mac, nowhere else.
 - **Friendly first-run onboarding** with in-context permission priming.
 - **Custom dictionary** to fix mistranscriptions (e.g. "screen" → "Screamm").
 - **Per-app code mode** — dictating into Xcode/VS Code/Terminal keeps code lowercase (no auto-capitalization).

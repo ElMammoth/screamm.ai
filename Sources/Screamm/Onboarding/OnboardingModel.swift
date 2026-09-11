@@ -5,7 +5,7 @@ import ScreammKit
 /// download (eng review) — only the optional "try it" waits for `.ready`.
 @MainActor
 final class OnboardingModel: ObservableObject {
-    enum Card: Int, CaseIterable { case welcome, mic, accessibility, tryIt }
+    enum Card: Int, CaseIterable { case welcome, name, mic, accessibility, tryIt }
 
     @Published var card: Card = .welcome
     @Published var micGranted = false
@@ -13,10 +13,22 @@ final class OnboardingModel: ObservableObject {
     @Published var loadState: LoadState = .idle
     @Published var didDictate = false
 
+    /// What the user typed on the name card. Optional the whole way through.
+    @Published var name: String = ""
+
     /// Called once when the user leaves the welcome card — kick off the background download.
     var onKickoffLoad: () -> Void = {}
+    /// Persists the name as soon as the user leaves the name card, so quitting mid-onboarding
+    /// doesn't lose it.
+    var onSaveName: (String) -> Void = { _ in }
     /// Called when onboarding is finished or skipped.
     var onFinish: () -> Void = {}
+
+    /// The typed name, or nil — the single place the UI asks "do we have a name?"
+    var trimmedName: String? {
+        let t = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? nil : t
+    }
 
     private var kickedOff = false
 
@@ -38,6 +50,7 @@ final class OnboardingModel: ObservableObject {
     }
 
     func advance() {
+        if card == .name { onSaveName(name) }
         if let next = Card(rawValue: card.rawValue + 1) {
             card = next
         } else {
@@ -45,5 +58,8 @@ final class OnboardingModel: ObservableObject {
         }
     }
 
-    func finish() { onFinish() }
+    func finish() {
+        if card == .name { onSaveName(name) }   // "Maybe later" from the name card still keeps it
+        onFinish()
+    }
 }

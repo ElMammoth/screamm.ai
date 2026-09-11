@@ -1,8 +1,14 @@
 # Screamm.ai — TODOS
 
+## Next up
+- **v0.4 — Screammy the squid.** Native SwiftUI mascot sitting on top of the waveform pill,
+  tentacles wrapping it; moods idle/listening/thinking/success; present only during dictation.
+  Spec lives in the v0.3 design doc under "(v0.4, DEFERRED)". **Gated on** `/plan-eng-review`
+  (pill-panel resize/anchor + a "must not regress ~1.83s warm decode" budget; confirm an
+  animated `Path` in a `.nonactivatingPanel` throttles when occluded) and `/plan-design-review`
+  on the visual.
+
 ## Cleanup before a public release (v1)
-- **Remove the "Preview celebration" dev affordance** — right-click menu item wired in
-  `MenuBarController` + `AppDelegate` (`setPreviewCelebration`). Purely for dogfooding.
 - **Notarization + distribution** — paid Apple Developer ID, notarized DMG, Homebrew cask,
   Sparkle auto-update. Currently self-signed/personal only (`Scripts/`).
 - Public-facing README polish + a simple landing page.
@@ -11,7 +17,7 @@
 - **Better voice-activity detection** — the current silence gate (`AudioAnalysis.isLikelySilent`,
   peak+RMS thresholds) catches true silence but not speech-shaped background noise. Consider
   WhisperKit's `EnergyVAD` or a proper VAD so noisy rooms don't hallucinate either.
-- **Streaming transcription** (v0.3) — show words as you speak; lower felt latency.
+- **Streaming transcription** — show words as you speak; lower felt latency.
 - **Optional local-LLM cleanup** (MLX) — grammar/formatting/tone as an opt-in stage.
 
 ## Features

@@ -3,6 +3,15 @@
 Newest first. One line per meaningful milestone: what, and why it mattered.
 
 ## 2026-09
+- **v0.3 — spoken lists + your name.** Two shipped features. (1) `SpokenListFormatter`: say a
+  list, get a list. "First, buy milk. Second, call mom." → a real numbered list; explicit
+  "bullet list"/"new bullet"/"end list" commands too. Deliberately conservative — needs
+  consecutive ordinals from "first" with real content in each, so "I was first and she was
+  second" stays prose. (2) `ProfileStore` + a name card in onboarding (question-as-headline,
+  one field, skippable) + a "You" settings tab. Every personalized string is nil-safe
+  (`possessive`, `addressed`): "Alex's day streak" / "Your day streak", "Nice work, Alex" /
+  "Nice work!". Also removed the "Preview celebration" dev affordance and folded the
+  right-click menu into a single "Settings" item. 74/74 tests.
 - **Per-app context (code mode)** — the signature differentiator, v1: dictating into a dev app
   (Xcode/VS Code/Terminal/Cursor/Zed/…) auto-skips sentence capitalization so code stays as
   spoken (`func`, not `Func`). Frontmost app captured at press; `CleanupMode` in the pipeline;
@@ -47,8 +56,10 @@ Newest first. One line per meaningful milestone: what, and why it mattered.
   `~/.gstack/projects/screamm.ai/`.
 
 ## Next up
-1. Duolingo-style onboarding + streak/stats + animations (planning — see `docs/`).
-2. Custom dictionary (fix "Screamm"→"screen").
+1. **v0.4 — Screammy the squid.** Native SwiftUI mascot on top of the pill, tentacles wrapping
+   it. Gated on `/plan-eng-review` (panel resize/anchor + a "must not regress ~1.83s warm
+   decode" budget) and `/plan-design-review` on the visual.
+2. Continued pill/popover polish.
 
 ## Later / deferred
 See `TODOS.md` and the roadmap in `DESIGN.md`.
