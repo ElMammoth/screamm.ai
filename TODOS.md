@@ -15,8 +15,10 @@
 - **Optional local-LLM cleanup** (MLX) — grammar/formatting/tone as an opt-in stage.
 
 ## Features
-- **Per-app context** (the signature differentiator) — swap dictionary/cleanup/language by the
-  frontmost app (Xcode → code-mode, French Slack → French). Seam already noted in the design doc.
+- **Per-app context — next stages.** v1 (code mode: auto-skip capitalization in dev apps) is
+  DONE (`ScreammKit/Context/`). Remaining: per-app **custom dictionary** (e.g. Xcode:
+  "screen"→"UIScreen") and per-app **forced language** (French Slack → French, via WhisperKit
+  decodeOptions). Would extend `AppContextSettings` into a full per-app profile + editor.
 - **Settings depth** — model tier switch (turbo/large-v3), hotkey rebind UI, translate-to-English
   toggle, streak-freeze ("pause & preserve").
 

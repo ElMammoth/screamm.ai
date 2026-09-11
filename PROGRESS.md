@@ -3,6 +3,10 @@
 Newest first. One line per meaningful milestone: what, and why it mattered.
 
 ## 2026-09
+- **Per-app context (code mode)** — the signature differentiator, v1: dictating into a dev app
+  (Xcode/VS Code/Terminal/Cursor/Zed/…) auto-skips sentence capitalization so code stays as
+  spoken (`func`, not `Func`). Frontmost app captured at press; `CleanupMode` in the pipeline;
+  `AppContextStore` + a "Per-app" settings tab (toggle + Add app…). 50/50 tests.
 - **Polish pass 2** — silence gate (`AudioAnalysis.isLikelySilent`) drops silent clips before
   transcription, killing the "Thank you." hallucination. Stats card: flame+number header (side
   by side), removed encouragement line, aligned 3-metric row (words · days · saved, no washed

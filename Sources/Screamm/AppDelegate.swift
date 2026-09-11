@@ -14,7 +14,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let celebration = CelebrationController()
     private let stats = StatsStore()
     private let dictionaryStore = DictionaryStore()
-    private lazy var settings = SettingsWindowController(store: dictionaryStore)
+    private let contextStore = AppContextStore()
+    private lazy var contextResolver = SystemContextResolver(store: contextStore)
+    private lazy var settings = SettingsWindowController(
+        dictionaryStore: dictionaryStore, contextStore: contextStore)
     private let onboarding = OnboardingWindowController()
     private var coordinator: RecordingCoordinator?
     private var menuBar: MenuBarController?
@@ -32,7 +35,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             transcriber: transcriber,
             injector: injector,
             stats: stats,
-            dictionary: dictionaryStore
+            dictionary: dictionaryStore,
+            context: contextResolver
         )
         self.coordinator = coordinator
         menuBar.setOpenDictionary { [weak self] in self?.settings.show() }
@@ -81,7 +85,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        stats.flush()   // synchronous flush so a quit mid-write can't lose data
+        // Synchronous flushes so a quit mid-write can't lose data.
+        stats.flush()
+        dictionaryStore.flush()
+        contextStore.flush()
     }
 
     // MARK: - First run

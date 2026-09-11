@@ -28,6 +28,9 @@ Working v0.2, on-device, dogfooded live. Everything below is DONE and on `main`:
   progress, `.regular`↔`.accessory` flip); tiered milestone confetti/badge celebrations.
 - **Custom dictionary:** user-editable replacements as the final cleanup stage + settings
   window; fixes "screen"→"Screamm". `ScreammKit/Dictionary/`.
+- **Per-app context (code mode):** dictating into a dev app (Xcode/VS Code/Terminal/Cursor/…)
+  auto-skips sentence capitalization (code is case-sensitive). Frontmost app captured at press;
+  settings toggle + editable app list. `ScreammKit/Context/` + `Screamm/SystemContextResolver.swift`.
 - **Stats card polish:** arrow-less custom borderless window (no bg mismatch), living flame,
   flame+number header, aligned 3-metric row (words · days · saved).
 
@@ -52,6 +55,7 @@ Sources/
     Transcription/            # WhisperKitTranscriber.swift (LoadState, two-step download, warm-up)
     Cleanup/                  # CleanupPipeline.swift (fillers, spoken commands, caps, + dictionary)
     Dictionary/               # CustomDictionary.swift (replacements) + DictionaryStore.swift
+    Context/                  # AppContext.swift (per-app CleanupMode) + AppContextStore.swift
     Stats/                    # Stats.swift (StatsData: streak/milestones) + StatsStore.swift
     Injection/                # ClipboardInjector.swift (paste+restore, secure-input guard)
     Hotkey/                   # HotkeyManager.swift (NSEvent .flagsChanged + lost-release watchdog)
@@ -60,10 +64,12 @@ Sources/
     Main.swift AppDelegate.swift MenuBarController.swift
     StatsPanel.swift          # the stats card (SwiftUI)
     StatsWindowController.swift  # arrow-less borderless window that hosts the card
+    SystemContextResolver.swift  # frontmost-app → CleanupMode (NSWorkspace)
     Overlay/                  # Theme.swift, WaveformView.swift, OverlayController.swift (pill),
                               #   AnimatedFlame.swift, CelebrationView.swift + CelebrationController.swift
     Onboarding/               # OnboardingModel/View/WindowController.swift (4-card first run)
-    Settings/                 # DictionarySettingsView.swift + SettingsWindowController.swift
+    Settings/                 # SettingsView (tabs) + DictionarySettingsView + CodeModeSettingsView
+                              #   + SettingsWindowController.swift
   ScreammSpike/               # throwaway engine spike (latency gate) — delete eventually
 Tests/ScreammKitTests/        # Swift Testing suite (Cleanup, Coordinator, Stats, Dictionary, Audio)
 Scripts/                      # make-cert.sh (self-signed cert), build-app.sh (build+sign .app)

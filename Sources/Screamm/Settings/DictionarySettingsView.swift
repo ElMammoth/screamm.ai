@@ -79,6 +79,6 @@ struct DictionarySettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 480, height: 420)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }

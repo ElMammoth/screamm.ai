@@ -2,18 +2,21 @@ import AppKit
 import SwiftUI
 import ScreammKit
 
-/// Hosts the dictionary editor. Like onboarding, flips to `.regular` so the window can take
-/// keyboard focus (text fields), back to `.accessory` on close. Saves on close too, so edits
-/// aren't lost if the user clicks the red button instead of Done.
+/// Hosts the settings tabs (dictionary + per-app code mode). Like onboarding, flips to
+/// `.regular` so text fields take focus, back to `.accessory` on close. Saves both models on
+/// close so edits aren't lost if the user clicks the red button instead of Done.
 @MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate {
 
-    private let store: DictionaryStore
+    private let dictionaryStore: DictionaryStore
+    private let contextStore: AppContextStore
     private var window: NSWindow?
-    private var model: DictionaryEditModel?
+    private var dictionaryModel: DictionaryEditModel?
+    private var codeModeModel: CodeModeEditModel?
 
-    init(store: DictionaryStore) {
-        self.store = store
+    init(dictionaryStore: DictionaryStore, contextStore: AppContextStore) {
+        self.dictionaryStore = dictionaryStore
+        self.contextStore = contextStore
         super.init()
     }
 
@@ -22,14 +25,19 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             bringToFront(window)
             return
         }
-        let model = DictionaryEditModel(store: store)
-        self.model = model
-        let host = NSHostingController(
-            rootView: DictionarySettingsView(model: model, onDone: { [weak self] in self?.window?.close() }))
+        let dictionaryModel = DictionaryEditModel(store: dictionaryStore)
+        let codeModeModel = CodeModeEditModel(store: contextStore)
+        self.dictionaryModel = dictionaryModel
+        self.codeModeModel = codeModeModel
+
+        let host = NSHostingController(rootView: SettingsView(
+            dictionary: dictionaryModel,
+            codeMode: codeModeModel,
+            onDone: { [weak self] in self?.window?.close() }))
         let window = NSWindow(contentViewController: host)
-        window.title = "Screamm — Dictionary"
+        window.title = "Screamm — Settings"
         window.styleMask = [.titled, .closable]
-        window.setContentSize(NSSize(width: 480, height: 420))
+        window.setContentSize(NSSize(width: 500, height: 470))
         window.center()
         window.isReleasedWhenClosed = false
         window.delegate = self
@@ -44,8 +52,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-        model?.save()
-        model = nil
+        dictionaryModel?.save()
+        codeModeModel?.save()
+        dictionaryModel = nil
+        codeModeModel = nil
         window = nil
         NSApp.setActivationPolicy(.accessory)
     }

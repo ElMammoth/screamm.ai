@@ -35,7 +35,11 @@ public final class RecordingCoordinator {
     private let cleanup: CleanupPipeline
     private let stats: StatsRecording?
     private let dictionary: DictionaryProviding?
+    private let context: CleanupModeProviding?
     private let minDurationSeconds: Double
+
+    /// Cleanup mode captured at press time (the app you're dictating into).
+    private var pendingMode: CleanupMode = .prose
 
     public init(
         recorder: AudioRecording,
@@ -44,6 +48,7 @@ public final class RecordingCoordinator {
         cleanup: CleanupPipeline = CleanupPipeline(),
         stats: StatsRecording? = nil,
         dictionary: DictionaryProviding? = nil,
+        context: CleanupModeProviding? = nil,
         minDurationSeconds: Double = 0.35
     ) {
         self.recorder = recorder
@@ -52,6 +57,7 @@ public final class RecordingCoordinator {
         self.cleanup = cleanup
         self.stats = stats
         self.dictionary = dictionary
+        self.context = context
         self.minDurationSeconds = minDurationSeconds
     }
 
@@ -61,6 +67,8 @@ public final class RecordingCoordinator {
         do {
             try recorder.start()
             state = .recording
+            // Capture the per-app cleanup mode now, while the target app is frontmost.
+            pendingMode = context?.currentCleanupMode() ?? .prose
         } catch {
             state = .idle
             onError?(error)
@@ -97,7 +105,8 @@ public final class RecordingCoordinator {
     private func runTranscription(_ samples: [Float]) async {
         do {
             let raw = try await transcriber.transcribe(samples)
-            let cleaned = cleanup.process(raw, dictionary: dictionary?.dictionary ?? CustomDictionary())
+            let cleaned = cleanup.process(
+                raw, dictionary: dictionary?.dictionary ?? CustomDictionary(), mode: pendingMode)
 
             // Suppress empty / hallucinated-on-silence output — never paste noise.
             guard !cleaned.isEmpty else {

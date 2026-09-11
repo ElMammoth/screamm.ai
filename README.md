@@ -17,6 +17,7 @@ no telemetry.
   all **local-only**, no accounts, no telemetry.
 - **Friendly first-run onboarding** with in-context permission priming.
 - **Custom dictionary** to fix mistranscriptions (e.g. "screen" → "Screamm").
+- **Per-app code mode** — dictating into Xcode/VS Code/Terminal keeps code lowercase (no auto-capitalization).
 - **Silence + hallucination gates** so it never types "Thank you." when you said nothing.
 - Rule-based cleanup (fillers, "new line", capitalization). Auto-detect language.
 

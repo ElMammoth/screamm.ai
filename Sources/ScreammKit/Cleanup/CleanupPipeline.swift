@@ -1,5 +1,12 @@
 import Foundation
 
+/// Per-app cleanup mode. `code` skips sentence auto-capitalization (code is case-sensitive,
+/// so "func" must not become "Func"); everything else is unchanged.
+public enum CleanupMode: String, Codable, Sendable {
+    case prose
+    case code
+}
+
 /// Rule-based post-processing for raw Whisper output. Pure functions, no I/O — the
 /// cheapest, highest-value tests in the project live here.
 ///
@@ -20,12 +27,14 @@ public struct CleanupPipeline {
     /// Deliberately conservative — only unambiguous fillers.
     static let fillers: Set<String> = ["um", "uh", "er", "erm", "hmm", "uhh", "umm"]
 
-    public func process(_ raw: String, dictionary: CustomDictionary = CustomDictionary()) -> String {
+    public func process(_ raw: String,
+                        dictionary: CustomDictionary = CustomDictionary(),
+                        mode: CleanupMode = .prose) -> String {
         var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.isEmpty { return "" }
         text = stripFillers(text)
         text = applySpokenCommands(text)
-        text = fixCapitalizationAndSpacing(text)
+        text = fixCapitalizationAndSpacing(text, capitalizeSentences: mode == .prose)
         text = dictionary.apply(to: text)   // final stage: user replacements (proper nouns/jargon)
         return text
     }
@@ -70,9 +79,9 @@ public struct CleanupPipeline {
 
     // MARK: - Stage 3: capitalization + spacing
 
-    /// Collapses runs of spaces, trims around newlines, and capitalizes the first letter
-    /// of each sentence.
-    func fixCapitalizationAndSpacing(_ input: String) -> String {
+    /// Collapses runs of spaces, trims around newlines, and (in prose mode) capitalizes the
+    /// first letter of each sentence. Code mode skips capitalization (case-sensitive).
+    func fixCapitalizationAndSpacing(_ input: String, capitalizeSentences: Bool = true) -> String {
         // Collapse horizontal whitespace (not newlines) to single spaces.
         var text = input.replacingOccurrences(
             of: "[ \\t]+", with: " ", options: .regularExpression
@@ -82,6 +91,8 @@ public struct CleanupPipeline {
             of: " *\\n *", with: "\n", options: .regularExpression
         )
         text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard capitalizeSentences else { return text }
 
         // Capitalize sentence starts: first non-space char, and after . ! ? or newline.
         var result = ""
