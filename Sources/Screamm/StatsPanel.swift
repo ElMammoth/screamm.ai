@@ -38,10 +38,7 @@ struct StatsPanel: View {
 
     private var streakHeader: some View {
         VStack(spacing: 8) {
-            Image(systemName: "flame.fill")
-                .font(.system(size: 36))
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.15), radius: 4, y: 1)
+            AnimatedFlame(size: 36)
                 .scaleEffect(appear || reduceMotion ? 1 : 0.6)
                 .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.55), value: appear)
             Text("\(data.currentStreak)")

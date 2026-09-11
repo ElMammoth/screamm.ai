@@ -72,11 +72,7 @@ struct WaveformView: View {
         .animation(.easeOut(duration: 0.09), value: model.levels)
         .animation(.easeInOut(duration: 0.2), value: model.isTranscribing)
         .animation(.easeInOut(duration: 0.15), value: model.success)
-        // Playful spring pop-in / pop-out.
-        .scaleEffect(model.appear ? 1 : 0.8)
-        .opacity(model.appear ? 1 : 0)
-        .animation(reduceMotion ? .easeOut(duration: 0.12)
-            : .spring(response: 0.32, dampingFraction: 0.62), value: model.appear)
+        // Appearance (slide-up + fade) is handled at the panel level in OverlayController.
         .fixedSize()
         // Generous transparent margin so the soft glow fades fully to zero inside the
         // panel instead of being clipped into a visible rectangle. Must exceed the

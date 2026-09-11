@@ -42,20 +42,46 @@ final class OverlayController {
     private func show() {
         let panel = panel ?? makePanel()
         self.panel = panel
-        reposition(panel)
-        panel.orderFrontRegardless()
-        // SwiftUI drives the spring pop-in.
+        reposition(panel)              // origin = resting position (near the bottom)
         model.appear = true
+        let target = panel.frame.origin
+
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            panel.alphaValue = 1
+            panel.orderFrontRegardless()
+            return
+        }
+        // Smoothly slide up from below its place + fade in.
+        panel.setFrameOrigin(NSPoint(x: target.x, y: target.y - 46))
+        panel.alphaValue = 0
+        panel.orderFrontRegardless()
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.32
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            panel.animator().setFrameOrigin(target)
+            panel.animator().alphaValue = 1
+        }
     }
 
     private func hide() {
+        guard let panel else { return }
         model.appear = false
-        // Let the spring pop-out finish before we pull the panel offscreen.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            guard let self, self.model.appear == false else { return }
-            self.panel?.orderOut(nil)
-            self.model.reset()
+
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            panel.orderOut(nil)
+            model.reset()
+            return
         }
+        let origin = panel.frame.origin
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.22
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            panel.animator().alphaValue = 0
+            panel.animator().setFrameOrigin(NSPoint(x: origin.x, y: origin.y - 30))
+        }, completionHandler: { [weak self] in
+            panel.orderOut(nil)
+            self?.model.reset()
+        })
     }
 
     private func makePanel() -> NSPanel {
