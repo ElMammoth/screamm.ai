@@ -44,6 +44,6 @@ final class CelebrationController {
         let visible = screen.visibleFrame
         let size = panel.frame.size
         panel.setFrameOrigin(NSPoint(x: visible.midX - size.width / 2,
-                                     y: visible.minY + 120))
+                                     y: visible.minY + 80))   // just above the lowered pill
     }
 }

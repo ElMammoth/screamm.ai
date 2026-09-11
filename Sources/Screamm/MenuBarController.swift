@@ -10,11 +10,7 @@ final class MenuBarController {
 
     private let statusItem: NSStatusItem
     private let stats: StatsStore
-    private let popover: NSPopover = {
-        let p = NSPopover()
-        p.behavior = .transient
-        return p
-    }()
+    private let statsWindow = StatsWindowController()
     private var previewHandler: (() -> Void)?
     private var openDictionaryHandler: (() -> Void)?
 
@@ -91,25 +87,13 @@ final class MenuBarController {
 
     private func togglePopover() {
         guard let button = statusItem.button else { return }
-        if popover.isShown {
-            popover.performClose(nil)
-            return
-        }
-        // Accessory apps must activate or the popover's SwiftUI controls get no events.
-        NSApp.activate(ignoringOtherApps: true)
-        let host = NSHostingController(
-            rootView: StatsPanel(
-                data: stats.data,
-                onQuit: { NSApp.terminate(nil) },
-                onEditDictionary: { [weak self] in
-                    self?.popover.performClose(nil)
-                    self?.openDictionaryHandler?()
-                }))
-        // Size the popover to the SwiftUI content — without this the popover can be
-        // mis-sized and clip above the top of the screen.
-        host.sizingOptions = [.preferredContentSize]
-        popover.contentViewController = host
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        statsWindow.toggle(relativeTo: button, view: NSHostingView(rootView: StatsPanel(
+            data: stats.data,
+            onQuit: { NSApp.terminate(nil) },
+            onEditDictionary: { [weak self] in
+                self?.statsWindow.close()
+                self?.openDictionaryHandler?()
+            })))
     }
 
     @objc private func previewCelebration() { previewHandler?() }

@@ -1,13 +1,16 @@
 import SwiftUI
 import ScreammKit
 
-/// The menu-bar stats popover: streak, week row, lifetime metrics, time saved. Reads a
-/// snapshot of StatsData (rebuilt each time the popover opens).
+/// The menu-bar stats card: streak, week row, lifetime metrics, time saved. A fully rounded
+/// card (hosted in a borderless transparent window — no system arrow), with a spring entrance.
 struct StatsPanel: View {
     let data: StatsData
     var calendar: Calendar = .current
     var onQuit: () -> Void = { NSApp.terminate(nil) }
     var onEditDictionary: () -> Void = {}
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appear = false
 
     private var isEmpty: Bool { data.totalDictations == 0 }
 
@@ -20,6 +23,15 @@ struct StatsPanel: View {
         }
         .frame(width: 300)
         .background(Color(nsColor: .windowBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .strokeBorder(.white.opacity(0.06), lineWidth: 1))
+        .scaleEffect(appear || reduceMotion ? 1 : 0.97, anchor: .top)
+        .opacity(appear || reduceMotion ? 1 : 0)
+        .onAppear {
+            if reduceMotion { appear = true }
+            else { withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) { appear = true } }
+        }
     }
 
     // MARK: Streak header
@@ -27,19 +39,24 @@ struct StatsPanel: View {
     private var streakHeader: some View {
         VStack(spacing: 8) {
             Image(systemName: "flame.fill")
-                .font(.system(size: 34))
+                .font(.system(size: 36))
                 .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.15), radius: 4, y: 1)
+                .scaleEffect(appear || reduceMotion ? 1 : 0.6)
+                .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.55), value: appear)
             Text("\(data.currentStreak)")
-                .font(.system(size: 42, weight: .heavy, design: .rounded))
+                .font(.system(size: 46, weight: .heavy, design: .rounded))
                 .foregroundStyle(.white)
                 .monospacedDigit()
+                .contentTransition(.numericText())
             Text(encouragement)
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.95))
-            weekRow.padding(.top, 6)
+                .multilineTextAlignment(.center)
+            weekRow.padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 22)
         .background(LinearGradient(colors: [Theme.brand, Theme.brandDeep],
                                    startPoint: .top, endPoint: .bottom))
         .accessibilityElement(children: .combine)
@@ -50,24 +67,31 @@ struct StatsPanel: View {
     private var weekRow: some View {
         let today = calendar.startOfDay(for: Date())
         let days = (0..<7).reversed().compactMap { calendar.date(byAdding: .day, value: -$0, to: today) }
-        return HStack(spacing: 10) {
-            ForEach(days, id: \.self) { day in
+        return HStack(spacing: 9) {
+            ForEach(Array(days.enumerated()), id: \.offset) { index, day in
                 let active = data.wasActive(on: day, calendar: calendar)
+                let isToday = calendar.isDateInToday(day)
                 VStack(spacing: 5) {
                     Text(dayLetter(day))
                         .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(.white.opacity(isToday ? 1 : 0.85))
                     ZStack {
                         Circle()
-                            .strokeBorder(.white.opacity(0.5), lineWidth: 2)
-                            .background(Circle().fill(active ? .white : .clear))
-                            .frame(width: 22, height: 22)
+                            .fill(active ? .white : .white.opacity(0.12))
+                            .overlay(Circle().strokeBorder(.white.opacity(isToday ? 0.9 : 0.35),
+                                                           lineWidth: isToday ? 2 : 1.5))
+                            .frame(width: 24, height: 24)
                         if active {
                             Image(systemName: "checkmark")
-                                .font(.system(size: 10, weight: .heavy))
+                                .font(.system(size: 11, weight: .heavy))
                                 .foregroundStyle(Theme.brand)
                         }
                     }
+                    .scaleEffect(appear || reduceMotion ? 1 : 0.4)
+                    .opacity(appear || reduceMotion ? 1 : 0)
+                    .animation(reduceMotion ? nil
+                        : .spring(response: 0.4, dampingFraction: 0.7).delay(0.06 + Double(index) * 0.04),
+                        value: appear)
                 }
             }
         }

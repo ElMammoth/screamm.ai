@@ -3,6 +3,11 @@
 Newest first. One line per meaningful milestone: what, and why it mattered.
 
 ## 2026-09
+- **Polish pass 1** — replaced the stats NSPopover with a custom borderless window (no arrow,
+  no bg mismatch) + refined it (spring entrance, flame bounce, staggered day dots, numeric
+  roll). Moved the speech pill much lower (near the Dock). Added a looping "thinking" wave
+  during processing so it no longer looks frozen (reduced-motion → static). New baseline doc
+  `docs/streak-and-animations.md` (streak mechanism + full animation inventory).
 - **Custom dictionary** — user-editable replacements applied as the final cleanup stage
   (whole-word/phrase, case-insensitive, boundary-safe so "screenshot" survives a "screen"
   rule). `DictionaryStore` (local JSON, atomic write, corrupt-backup) + a settings window

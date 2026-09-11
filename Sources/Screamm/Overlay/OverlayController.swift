@@ -86,7 +86,7 @@ final class OverlayController {
         let visible = screen.visibleFrame
         let size = panel.frame.size
         let x = visible.midX - size.width / 2
-        let y = visible.minY + 96
+        let y = visible.minY + 24     // low, just above the Dock / bottom edge
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 }
