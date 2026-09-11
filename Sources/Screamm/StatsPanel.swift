@@ -18,7 +18,6 @@ struct StatsPanel: View {
         VStack(spacing: 0) {
             streakHeader
             metrics
-            savedChip
             footer
         }
         .frame(width: 300)
@@ -38,18 +37,21 @@ struct StatsPanel: View {
 
     private var streakHeader: some View {
         VStack(spacing: 8) {
-            AnimatedFlame(size: 36)
-                .scaleEffect(appear || reduceMotion ? 1 : 0.6)
-                .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.55), value: appear)
-            Text("\(data.currentStreak)")
-                .font(.system(size: 46, weight: .heavy, design: .rounded))
-                .foregroundStyle(.white)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-            Text(encouragement)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.95))
-                .multilineTextAlignment(.center)
+            HStack(spacing: 12) {
+                AnimatedFlame(size: 42)
+                Text("\(data.currentStreak)")
+                    .font(.system(size: 50, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+            .scaleEffect(appear || reduceMotion ? 1 : 0.7)
+            .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.6), value: appear)
+            Text(isEmpty ? "Start your streak" : "day streak")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.9))
+                .textCase(.uppercase)
+                .tracking(0.5)
             weekRow.padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
@@ -94,55 +96,50 @@ struct StatsPanel: View {
         }
     }
 
-    private var encouragement: String {
-        if isEmpty { return "Say your first words to start a streak" }
-        switch data.currentStreak {
-        case 1: return "Day one. Come back tomorrow 🔥"
-        case 2...6: return "\(data.currentStreak) days, you're on a roll"
-        default: return "\(data.currentStreak) days strong"
-        }
-    }
-
-    // MARK: Metrics
+    // MARK: Metrics (clean aligned row, Ahead/pushr style — no tinted background)
 
     private var metrics: some View {
-        HStack(spacing: 12) {
-            metric(value: isEmpty ? "—" : data.totalWords.formatted(), label: "words")
-            metric(value: isEmpty ? "—" : "\(data.perDay.count)", label: "days used")
+        HStack(alignment: .top, spacing: 8) {
+            metric(value: isEmpty ? "—" : compactWords, label: "words")
+            divider
+            metric(value: isEmpty ? "—" : "\(data.perDay.count)", label: "days")
+            divider
+            metric(value: isEmpty ? "—" : savedValue, label: "saved")
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 18)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 18)
+    }
+
+    private var divider: some View {
+        Rectangle().fill(Color.primary.opacity(0.08)).frame(width: 1, height: 28)
     }
 
     private func metric(value: String, label: String) -> some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 3) {
             Text(value)
-                .font(.system(size: 24, weight: .heavy, design: .rounded))
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
                 .monospacedDigit()
+                .lineLimit(1).minimumScaleFactor(0.7)
             Text(label.uppercased())
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .tracking(0.4)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
     }
 
-    private var savedChip: some View {
-        Text(savedText)
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
-            .foregroundStyle(Theme.brandDeep)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 14).padding(.vertical, 10)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.brand.opacity(0.12)))
-            .padding(.horizontal, 20).padding(.top, 14)
+    /// Words: exact under 10k, compact "24.8k" above.
+    private var compactWords: String {
+        let w = data.totalWords
+        if w >= 10_000 { return String(format: "%.1fk", Double(w) / 1000) }
+        return w.formatted()
     }
 
-    private var savedText: String {
-        guard !isEmpty else { return "Your time saved will show up here" }
+    /// Estimated time saved. "~" reads as approximate; no cryptic "est".
+    private var savedValue: String {
         let minutes = data.timeSavedMinutes
-        if minutes >= 60 {
-            return "≈ \(String(format: "%.1f", minutes / 60)) hrs saved  ~est"
-        }
-        return "≈ \(Int(minutes.rounded())) min saved  ~est"
+        if minutes >= 60 { return "~" + String(format: "%.1f", minutes / 60) + "h" }
+        return "~\(Int(minutes.rounded()))m"
     }
 
     // MARK: Footer
