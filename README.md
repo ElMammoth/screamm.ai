@@ -14,7 +14,7 @@ An open-source alternative to Wispr Flow.
 
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111?style=flat-square)
 ![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-M1%2B-111?style=flat-square)
-![Swift 6](https://img.shields.io/badge/Swift-6-F48C02?style=flat-square)
+![Swift 5.9](https://img.shields.io/badge/Swift-5.9-F48C02?style=flat-square)
 ![License MIT](https://img.shields.io/badge/license-MIT-F48C02?style=flat-square)
 ![No telemetry](https://img.shields.io/badge/telemetry-none-2ea043?style=flat-square)
 
@@ -47,9 +47,9 @@ Hold **Right ⌘**. A pill slides up from the bottom of the screen and shows you
 | | |
 |---|---|
 | 🎙 **Hold to talk** | Right ⌘ down to record, up to paste. Works in every app, including ones that block other tools. |
-| 🧠 **On-device Whisper** | `large-v3-turbo` on the ANE. The model downloads once; after that you can pull the ethernet cable. |
+| 🧠 **On-device Whisper** | `large-v3-turbo` on the ANE. Transcription itself is fully local — no audio ever leaves the machine. |
 | ✍️ **Cleanup that isn't annoying** | Strips "um" and "uh", fixes capitalization and spacing, understands "new line" and "new paragraph". |
-| 📋 **Spoken lists** | "First, buy milk. Second, call mom." comes out as a real numbered list. |
+| 📋 **Spoken lists** | "First, buy milk. Second, call mom." comes out as a real numbered list. ⚠️ *Unreliable on natural speech today — see [`TODOS.md`](TODOS.md).* |
 | 💻 **Per-app code mode** | In Xcode, VS Code, or a terminal it stops capitalizing, so you get `func`, not `Func`. |
 | 📖 **Custom dictionary** | Teach it the names and jargon it always gets wrong. Whole-word, case-insensitive. |
 | 🔥 **Streaks** | Words dictated, time saved, a day counter. Stored in a JSON file on your disk and nowhere else. |
@@ -115,7 +115,9 @@ Delete those two folders and the `.app`, and nothing remains. No launch agents, 
         └──────────────── RecordingCoordinator (idle → recording → transcribing → injecting) ──────────────┘
 ```
 
-Audio exists as a `Float` buffer in memory and is released the moment transcription returns. It is never written to disk. The only network call Screamm ever makes is the one-time model download.
+Audio exists as a `Float` buffer in memory and is released the moment transcription returns. It is never written to disk, and no audio or text ever crosses the network.
+
+> **Known gap:** startup currently resolves the model through HuggingFace on every launch, so a cold start needs a connection even when the model is already downloaded. Making startup fully offline is tracked in [`TODOS.md`](TODOS.md) and is the next fix.
 
 <br>
 
@@ -123,7 +125,7 @@ Audio exists as a `Float` buffer in memory and is released the moment transcript
 
 ```
 Sources/
-  ScreammKit/          the logic + macOS integrations — all of this is unit-tested
+  ScreammKit/          the logic + macOS integrations
     Core/              protocol seams + RecordingCoordinator (the state machine)
     Audio/             AVAudioEngine tap, silence detection
     Transcription/     WhisperKit wrapper (load states, warm-up)
@@ -158,7 +160,7 @@ Honest about what's rough — open bugs and the roadmap live in [`TODOS.md`](TOD
 Issues and PRs welcome. Two rules that aren't negotiable:
 
 1. **Nothing leaves the device.** No analytics, no crash reporting, no "anonymous" usage pings, no remote config. Not behind a flag, not opt-in.
-2. **Logic goes in `ScreammKit` with a test.** The UI is dogfooded by hand; the text pipeline and the state machine are not.
+2. **Logic goes in `ScreammKit` with a test.** The UI is dogfooded by hand; the text pipeline and the state machine are not. (The pipeline, stats and state machine hold up their end today; `Audio/`, `Injection/`, `Hotkey/` and `Transcription/` do not yet, and PRs that close that gap are the most welcome kind.)
 
 <br>
 

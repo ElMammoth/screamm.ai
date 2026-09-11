@@ -4,19 +4,19 @@ import ScreammKit
 // ───────────────────────────────────────────────────────────────────────────────
 // TEMPORARY — PREVIEW FLAGS.  ⚠️ REVERT THIS WHOLE BLOCK when you're done looking.
 //
-// `onboarding = true` forces the first-run window on every launch so you can review
-// it without wiping your real state (preview mode deliberately does NOT mark
-// onboarding complete, and does NOT re-download anything).
+// Both default to FALSE and must stay that way on `main`. A `true` default here makes the
+// built app show onboarding forever, never download the model, and never mark first-run
+// complete — i.e. a non-working app for anyone who follows the README.
 //
-// To revert: set both to false, or delete this enum and its two `if Preview.…`
-// uses in `applicationDidFinishLaunching`. Nothing else references it.
-//
-// You can also override without editing code:
+// To preview a screen, pass the env var instead of editing this file:
 //   SCREAMM_PREVIEW=onboarding ./Screamm.app/Contents/MacOS/Screamm
 //   SCREAMM_PREVIEW=settings   ./Screamm.app/Contents/MacOS/Screamm
+//
+// Preview mode deliberately does NOT mark onboarding complete and does NOT download.
+// To remove entirely: delete this enum and its two `if Preview.…` uses below.
 // ───────────────────────────────────────────────────────────────────────────────
 enum Preview {
-    static var onboarding: Bool { flag("onboarding", fallback: true) }
+    static var onboarding: Bool { flag("onboarding", fallback: false) }
     static var settings: Bool { flag("settings", fallback: false) }
 
     private static func flag(_ name: String, fallback: Bool) -> Bool {

@@ -22,10 +22,95 @@
   your own machine — you already know whose streak it is. The name is now asked at onboarding
   only and used just in the celebration line. Revisit only if there's a use that earns it.
 
-## Temporary — REVERT THIS
-- **Onboarding preview flag is ON.** `Preview.onboarding = true` at the top of
-  `Sources/Screamm/AppDelegate.swift` forces the first-run window on every launch. Set both
-  `Preview` flags to false (or delete the enum and its two uses) once the screens are reviewed.
+## From the YC-style review (2026-09-11) — ranked
+
+Every item below was verified against the source, not taken on faith.
+
+### P0 — breaks the core promise
+- **Startup is not offline.** `WhisperKitTranscriber.load()` calls `WhisperKit.download(...)`
+  unconditionally on EVERY launch (`Transcription/WhisperKitTranscriber.swift:37`), and that
+  function hits HuggingFace to resolve filenames before checking for a local snapshot. No
+  network → `.failed` → dead menu-bar icon. **Fix:** look for the existing model folder first
+  and build `WhisperKitConfig(modelFolder:download:false)` directly; only call `download` when
+  the folder is absent. This is the single biggest gap between what the README promises and
+  what the app does.
+
+### P1 — silent data loss in the paste path (`Injection/ClipboardInjector.swift`)
+Four failure modes, all silent, none tested:
+- Clipboard restores after a fixed **0.15s** (line 43). Electron apps (Slack, VS Code, Notion)
+  routinely take longer to service a synthetic ⌘V → the user gets their OLD clipboard pasted.
+  Wait on `NSPasteboard.changeCount` or lengthen it substantially.
+- Restore only handles `.string` (line 46) — dictating after copying an image or file
+  **destroys that clipboard**.
+- `postCommandV()` never checks `AXIsProcessTrusted()`. Without Accessibility, `CGEvent.post`
+  silently no-ops and the transcript is wiped 0.15s later. Text simply vanishes.
+- The secure-input fallback sets a **tooltip** (`MenuBarController.flashSecureInputNotice`),
+  which is invisible unless you're already hovering the menu bar — which you aren't, because
+  you're typing somewhere else.
+- **Fix:** extract `PasteboardWriting` + `SecureInputProbing` seams (the same protocol-seam
+  pattern used everywhere else in ScreammKit) and test all four.
+
+### P1 — failures are invisible
+- `AppDelegate.onError` is `NSLog` and nothing else (`AppDelegate.swift`). Mic unavailable,
+  decode throw, `notLoaded` — all produce a successful-looking dictation that yields no text.
+- Three of `RecordingCoordinator`'s exits (`min-duration`, `silence gate`, `empty cleanup`)
+  do `state = .idle; return` with **no signal at all**.
+- **A press during `.transcribing` is silently dropped** (`canStartRecording` is `.idle`-only).
+  Decode is ~1.8s warm, far longer for a long utterance, so in burst use this is the thing
+  that will feel broken first. Queue it or show a "still thinking" state.
+- **Fix:** give the pill a visible error//busy state. The user is already looking at the pill.
+
+### P2 — the green ✓ probably never renders
+`runTranscription` sets `.injecting`, injects, fires `onSuccess`, and sets `.idle` **all in one
+synchronous main-actor tick**, so the 0.15s success animation races the 0.22s hide that starts
+at the same instant. The README sells this flash as the core feel. Hold `.injecting` briefly.
+
+### P2 — concurrency
+- `WhisperKitTranscriber` is a plain `final class` with mutable `pipe`/`loadState`, no actor and
+  no `Sendable`; `setState` hops to main, so `loadState` is **stale right after `await load()`
+  returns** — which is exactly what `completeOnboarding` branches on.
+- `AudioRecorder.append` runs on the realtime render thread and does buffer allocation, array
+  allocation, `NSLock.lock()` and a `DispatchQueue.main.async`, ~47×/sec. All four are on the
+  "never do this on the audio thread" list; the lock is a priority-inversion hazard.
+- `isRunning` is unsynchronized while `samples` is lock-protected — inconsistent discipline in
+  one object.
+- **Fix:** turn on `swiftLanguageMode(.v6)` + `StrictConcurrency` and let the compiler find the
+  rest. Cheapest quality win available.
+
+### P2 — test suite measures the wrong things
+74 tests, but **~74% cover pure string manipulation and the streak counter**, and 9 of them
+guard `Profile` copy that is no longer rendered anywhere. **Zero** tests for `ClipboardInjector`
+(66 lines), `HotkeyManager` (102), `AudioRecorder` (125), `WhisperKitTranscriber` (81),
+`Permissions` (50), or any of `Sources/Screamm/`. Untested coordinator paths: transcriber
+throwing, recorder throwing, press-during-transcribing, `pendingMode` capture (the per-app
+feature that's actually broken), and the dictionary path through the coordinator.
+Also: `waitUntilIdle` in the tests is a polling sleep that **falls through instead of failing**,
+so a hung coordinator makes the two absence-asserting tests pass for the wrong reason.
+
+### P3 — repo hygiene
+- No `.github/` at all: no CI. A green `swift test` check is the minimum signal for a repo
+  asking for PRs.
+- `ScreammSpike` is still a shipped target; CLAUDE.md has said "delete eventually" since v0.1.
+- `CLAUDE.md` at the root of a public repo contains machine-local paths and internal notes.
+
+### Positioning (the part that isn't code)
+- The wedge is **compliance, not privacy-as-a-value**. People under an NDA/DPA are *forbidden*
+  from cloud dictation and currently type. That's an unlock, not a preference switch. Lead with it.
+- 8 of the 9 README feature rows are table stakes vs Superwhisper. The differentiated one
+  (per-app code mode) is buried and currently broken.
+- macOS 26's improved built-in dictation is the real competitor. The answer has to be output
+  quality, and **nothing in the repo measures output quality** (no WER, no accuracy harness).
+- Explicitly do NOT build next: the mascot (already cost two commits), more streak surface,
+  MLX cleanup, or streaming transcription.
+
+### Recommended order
+Offline startup → clipboard seams + tests → visible errors → notarized DMG → 10 real users.
+
+## Temporary — preview flags
+- `Preview` in `Sources/Screamm/AppDelegate.swift` defaults to **false** and must stay that way
+  on `main` (a `true` default ships an app that shows onboarding forever and never downloads
+  the model). Preview a screen with the env var instead:
+  `SCREAMM_PREVIEW=onboarding ./Screamm.app/Contents/MacOS/Screamm`
 
 ## Cleanup before a public release (v1)
 - **Notarization + distribution** — paid Apple Developer ID, notarized DMG, Homebrew cask,
